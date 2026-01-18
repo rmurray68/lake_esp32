@@ -39,3 +39,19 @@
 
 # debug information files
 *.dwo
+
+# Arduino/ESP32 build artifacts
+build/
+bin/
+*.elf
+*.bin
+*.hex
+
+# Editor specific
+.vscode/
+.DS_Store
+*.swp
+
+# Local board settings (keep your code portable)
+sdkconfig
+sdkconfig.old
