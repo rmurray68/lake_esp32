@@ -55,3 +55,5 @@ bin/
 # Local board settings (keep your code portable)
 sdkconfig
 sdkconfig.old
+
+src/secrets.h

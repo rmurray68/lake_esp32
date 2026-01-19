@@ -1,16 +1,17 @@
 #include <Arduino.h> // <--- REQUIRED for VS Code / PlatformIO
 #include <WiFi.h>
 #include <ESP32Ping.h>
+#include "secrets.h"
 
 // --- CONFIGURATION ---
-const char* ssid     = "YOUR_WIFI_NAME";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid     = SECRET_SSID; // <--- Use the secret
+const char* password = SECRET_PASS; // <--- Use the secret
 
 const int RELAY_ROUTER = 17; // Connected to IN1
 const int RELAY_MESH   = 27; // Connected to IN2
 
 const int PING_INTERVAL_MINS = 5;    // Check every 5 minutes
-const int REBOOT_DELAY_MS    = 120000; // 2 minutes in milliseconds
+const int REBOOT_DELAY_MS    = 150000; // 2.5 minutes in milliseconds
 const int MAX_FAILURES       = 3;      // Failures before rebooting
 
 int failureCount = 0;
