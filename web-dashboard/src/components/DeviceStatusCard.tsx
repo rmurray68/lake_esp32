@@ -14,7 +14,7 @@ import {
   Thermostat,
   AccessTime,
 } from '@mui/icons-material';
-import type { DeviceStatus } from './Dashboard';
+import type { DeviceStatus } from '../services/api';
 
 interface DeviceStatusCardProps {
   device: DeviceStatus;
