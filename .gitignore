@@ -78,3 +78,4 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+web-dashboard/src/amplify_outputs.json

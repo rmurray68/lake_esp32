@@ -4,7 +4,7 @@ export const getDeviceStatus = defineFunction({
   name: 'getDeviceStatus',
   entry: './handler.ts',
   environment: {
-    // Add your existing Lambda ARN or DynamoDB table name
-    // DEVICE_TABLE_NAME: 'your-dynamodb-table-name',
+    DEVICE_TABLE_NAME: 'LakeHouse_Logs',
+    AWS_REGION_NAME: 'us-east-1',
   },
 });

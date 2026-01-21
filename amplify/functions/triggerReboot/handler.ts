@@ -18,10 +18,16 @@ export const handler: Handler = async (event, context) => {
       };
     }
 
-    // TODO: Invoke your existing Lambda function to trigger reboot
-    // TODO: Or publish to AWS IoT topic to trigger reboot
-    
     console.log(`Triggering reboot for device: ${deviceId}`);
+
+    // Call Lambda Function URL with secret key
+    const url = `${process.env.LAMBDA_FUNCTION_URL}?key=${process.env.LAMBDA_API_KEY}&action=reboot`;
+    const response = await fetch(url, {
+      method: 'GET',
+    });
+
+    const responseData = await response.text();
+    console.log('Lambda response:', responseData);
 
     return {
       statusCode: 200,
@@ -30,9 +36,10 @@ export const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Headers': '*',
       },
       body: JSON.stringify({ 
-        message: 'Reboot command sent',
+        message: 'Reboot command sent successfully',
         deviceId,
         timestamp: new Date().toISOString(),
+        lambdaResponse: responseData,
       }),
     };
   } catch (error) {
@@ -43,7 +50,10 @@ export const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
       },
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
     };
   }
 };

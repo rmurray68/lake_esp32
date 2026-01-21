@@ -9,6 +9,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import type { AuthUser } from 'aws-amplify/auth';
+import outputs from '../amplify_outputs.json';
 import DeviceStatusCard from './DeviceStatusCard.tsx';
 import RecentLogs from './RecentLogs.tsx';
 
@@ -42,19 +43,30 @@ function Dashboard({ user, signOut }: DashboardProps) {
 
   const fetchDeviceStatus = async () => {
     try {
-      // Get the outputs to find Lambda function URLs
-      // TODO: Use fetchAuthSession when connecting to real backend
+      const functionUrl = (outputs as any).custom?.getDeviceStatus;
       
-      // TODO: Replace with actual Lambda invocation using aws-amplify/api
-      // For now, using mock data until sandbox is deployed
-      setDeviceStatus({
-        deviceId: 'logmor-switch-01',
-        status: 'online',
-        lastSeen: new Date().toISOString(),
-        uptime: 86400, // 1 day in seconds
-        temperature: 45.2,
-        wifiSignal: -55,
+      if (!functionUrl) {
+        throw new Error('getDeviceStatus function URL not found in outputs');
+      }
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: 'URL_Monitor_XIAO' }),
       });
+
+      const data = await response.json();
+      
+      if (data.item) {
+        setDeviceStatus({
+          deviceId: data.item.device,
+          status: data.item.internet_ok ? 'online' : 'offline',
+          lastSeen: new Date(data.item.timestamp * 1000).toISOString(),
+          uptime: data.item.uptime_sec,
+          temperature: undefined, // Not in current schema
+          wifiSignal: data.item.signal_strength,
+        });
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching device status:', error);
@@ -65,20 +77,32 @@ function Dashboard({ user, signOut }: DashboardProps) {
   const handleReboot = async () => {
     if (!deviceStatus) return;
     
+    const confirmed = window.confirm(
+      `Are you sure you want to reboot ${deviceStatus.deviceId}?`
+    );
+    
+    if (!confirmed) return;
+    
     try {
-      // TODO: Replace with actual Lambda invocation using aws-amplify/api
-      // For now, just logging
-      console.log('Triggering reboot for device:', deviceStatus.deviceId);
+      const functionUrl = (outputs as any).custom?.triggerReboot;
       
-      const confirmed = window.confirm(
-        `Are you sure you want to reboot ${deviceStatus.deviceId}?`
-      );
-      
-      if (confirmed) {
-        alert('Reboot command sent to device (mock)');
-        // Refresh status after a delay
-        setTimeout(fetchDeviceStatus, 2000);
+      if (!functionUrl) {
+        throw new Error('triggerReboot function URL not found in outputs');
       }
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: deviceStatus.deviceId }),
+      });
+
+      const data = await response.json();
+      console.log('Reboot response:', data);
+      
+      alert('Reboot command sent successfully!');
+      
+      // Refresh status after a delay
+      setTimeout(fetchDeviceStatus, 2000);
     } catch (error) {
       console.error('Error triggering reboot:', error);
       alert('Failed to trigger reboot');
