@@ -71,7 +71,7 @@ function DashboardNew({ user, signOut }: DashboardProps) {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Lake ESP32 Dashboard
+            Lake House Internet Dashboard
           </Typography>
           <Typography variant="body2" sx={{ mr: 2 }}>
             {user?.signInDetails?.loginId}
@@ -104,13 +104,13 @@ function DashboardNew({ user, signOut }: DashboardProps) {
               {esp32Status && (
                 <DeviceStatusCard
                   device={esp32Status}
-                  title="ESP32 Monitor"
+                  title="URL Monitor (ESP32)"
                 />
               )}
               {logmorStatus && (
                 <DeviceStatusCard
                   device={logmorStatus}
-                  title="Logmor Switch"
+                  title="Remote LTE Switch (Logmor)"
                   onReboot={handleReboot}
                 />
               )}

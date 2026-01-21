@@ -72,7 +72,7 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
     <Card sx={{ width: '100%' }}>
       <CardContent>
         <Typography variant="h5" component="div" gutterBottom>
-          Recent Activity
+          URL Monitor Activity Logs
         </Typography>
 
         {loading ? (

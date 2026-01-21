@@ -23,7 +23,14 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Authenticator>
+      <Authenticator 
+        hideSignUp={true}
+        components={{
+          SignIn: {
+            Footer: () => null,
+          },
+        }}
+      >
         {({ signOut, user }) => (
           <DashboardNew user={user} signOut={signOut} />
         )}
