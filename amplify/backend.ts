@@ -3,6 +3,7 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { getDeviceStatus } from './functions/getDeviceStatus/resource';
+import { getLogs } from './functions/getLogs/resource';
 import { triggerReboot } from './functions/triggerReboot/resource';
 
 /**
@@ -12,11 +13,23 @@ const backend = defineBackend({
   auth,
   data,
   getDeviceStatus,
+  getLogs,
   triggerReboot,
 });
 
 // Grant DynamoDB read permissions to getDeviceStatus
 backend.getDeviceStatus.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:Scan'],
+    resources: [
+      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs',
+      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs/index/*',
+    ],
+  })
+);
+
+// Grant DynamoDB read permissions to getLogs
+backend.getLogs.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:Scan'],
     resources: [
@@ -36,6 +49,13 @@ backend.getDeviceStatus.resources.lambda.grantInvoke(
   backend.auth.resources.authenticatedUserIamRole
 );
 
+backend.getLogs.resources.lambda.grantInvoke(
+  backend.auth.resources.unauthenticatedUserIamRole
+);
+backend.getLogs.resources.lambda.grantInvoke(
+  backend.auth.resources.authenticatedUserIamRole
+);
+
 backend.triggerReboot.resources.lambda.grantInvoke(
   backend.auth.resources.authenticatedUserIamRole
 );
@@ -44,6 +64,7 @@ backend.triggerReboot.resources.lambda.grantInvoke(
 backend.addOutput({
   custom: {
     getDeviceStatusFunctionName: backend.getDeviceStatus.resources.lambda.functionName,
+    getLogsFunctionName: backend.getLogs.resources.lambda.functionName,
     triggerRebootFunctionName: backend.triggerReboot.resources.lambda.functionName,
   },
 });

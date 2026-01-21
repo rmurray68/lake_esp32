@@ -144,7 +144,33 @@ export async function fetchRecentLogs(): Promise<LogEntry[]> {
     const response = await fetch(`${API_BASE_URL}/logs`);
     return await response.json();
   } else {
-    // Production: TODO - implement Lambda call or return empty
-    return [];
+    // Production: call Lambda
+    const session = await fetchAuthSession();
+    const functionName = (outputs as any).custom?.getLogsFunctionName;
+    
+    if (!functionName) {
+      throw new Error('getLogs function not configured');
+    }
+
+    const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+    const lambda = new LambdaClient({
+      region: 'us-east-1',
+      credentials: session.credentials,
+    });
+
+    const result = await lambda.send(
+      new InvokeCommand({
+        FunctionName: functionName,
+        Payload: JSON.stringify({}),
+      })
+    );
+
+    const responsePayload = result.Payload 
+      ? JSON.parse(new TextDecoder().decode(result.Payload))
+      : {};
+    
+    const data = JSON.parse(responsePayload.body || '[]');
+    
+    return data;
   }
 }
