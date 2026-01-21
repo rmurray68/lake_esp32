@@ -13,7 +13,7 @@ export const handler: Handler = async (event, context) => {
     
     // Query DynamoDB for the latest record for this device
     const result = await docClient.send(new QueryCommand({
-      TableName: process.env.DYNAMODB_TABLE_NAME,
+      TableName: process.env.DEVICE_TABLE_NAME || 'LakeHouse_Logs',
       KeyConditionExpression: 'device = :deviceId',
       ExpressionAttributeValues: {
         ':deviceId': deviceId,
