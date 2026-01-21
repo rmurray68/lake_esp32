@@ -1,20 +1,46 @@
 import type { Handler } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
+
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler: Handler = async (event, context) => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
   try {
-    // TODO: Query your DynamoDB table for device status
-    // TODO: Or call your existing Lambda function
+    const deviceId = 'URL_Monitor_XIAO';
     
-    // Mock response for now
+    // Query DynamoDB for the latest record for this device
+    const result = await docClient.send(new QueryCommand({
+      TableName: process.env.DYNAMODB_TABLE_NAME,
+      KeyConditionExpression: 'device = :deviceId',
+      ExpressionAttributeValues: {
+        ':deviceId': deviceId,
+      },
+      ScanIndexForward: false, // Sort descending by timestamp
+      Limit: 1, // Get only the most recent record
+    }));
+
+    if (!result.Items || result.Items.length === 0) {
+      return {
+        statusCode: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*',
+        },
+        body: JSON.stringify({ error: 'No data found for device' }),
+      };
+    }
+
+    const latestRecord = result.Items[0];
+    
     const response = {
-      deviceId: 'logmor-switch-01',
-      status: 'online',
-      lastSeen: new Date().toISOString(),
-      uptime: 86400,
-      temperature: 45.2,
-      wifiSignal: -55,
+      deviceId: latestRecord.device,
+      status: latestRecord.internet_ok ? 'online' : 'offline',
+      lastSeen: latestRecord.timestamp,
+      uptime: latestRecord.uptime_sec,
+      wifiSignal: latestRecord.signal_strength,
     };
 
     return {
