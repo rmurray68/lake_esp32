@@ -40,10 +40,8 @@ export const handler = async (event: any) => {
     // Convert DynamoDB items to log format
     const logs = response.Items.map(item => ({
       timestamp: new Date(parseInt(item.timestamp.N!) * 1000).toISOString(),
-      status: item.internet_ok?.BOOL ? 'ONLINE' : 'OFFLINE',
-      message: item.internet_ok?.BOOL ? 'Device online' : 'Device offline',
-      uptime: item.uptime_sec?.N ? `${Math.floor(parseInt(item.uptime_sec.N) / 3600)}h ${Math.floor((parseInt(item.uptime_sec.N) % 3600) / 60)}m` : 'Unknown',
-      signal: item.signal_strength?.N ? `${item.signal_strength.N} dBm` : 'Unknown'
+      status: item.internet_ok?.BOOL ? 'success' : 'error',
+      message: item.internet_ok?.BOOL ? 'Device online' : 'Device offline'
     }));
 
     return {
