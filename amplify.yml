@@ -11,6 +11,7 @@ frontend:
       commands:
         - cd web-dashboard
         - npm ci --cache .npm --prefer-offline
+        - cp ../amplify_outputs.json src/amplify_outputs.json
     build:
       commands:
         - npm run build
