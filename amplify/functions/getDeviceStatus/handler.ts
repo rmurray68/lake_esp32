@@ -35,10 +35,15 @@ export const handler: Handler = async (event, context) => {
 
     const latestRecord = result.Items[0];
     
+    // Check if device is online (reported within last 5 minutes)
+    const lastSeenDate = new Date(latestRecord.timestamp * 1000);
+    const minutesSinceLastSeen = (Date.now() - lastSeenDate.getTime()) / 1000 / 60;
+    const isOnline = latestRecord.internet_ok && minutesSinceLastSeen < 5;
+    
     const response = {
       deviceId: latestRecord.device,
-      status: latestRecord.internet_ok ? 'online' : 'offline',
-      lastSeen: latestRecord.timestamp,
+      status: isOnline ? 'online' : 'offline',
+      lastSeen: lastSeenDate.toISOString(),
       uptime: latestRecord.uptime_sec,
       wifiSignal: latestRecord.signal_strength,
     };
