@@ -59,20 +59,21 @@ export async function fetchEsp32Status(): Promise<DeviceStatus> {
 // Fetch Logmor switch status
 export async function fetchLogmorStatus(): Promise<DeviceStatus> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    
-    const response = await fetch(
-      'https://poatmimq2hxlfo75ngglui4llm0fllpt.lambda-url.us-east-1.on.aws/?key=lakehouse2026',
-      { signal: controller.signal }
+    const session = await fetchAuthSession();
+    const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+    const lambda = new LambdaClient({
+      region: 'us-east-1',
+      credentials: session.credentials,
+    });
+
+    await lambda.send(
+      new InvokeCommand({
+        FunctionName: 'LakeHouse_Logmor_Controller',
+        Payload: JSON.stringify({ action: 'status' }),
+      })
     );
-    clearTimeout(timeoutId);
     
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    // Lambda is responding, so it's online
+    // Lambda responded successfully, it's online
     return {
       deviceId: 'logmor-switch-01',
       status: 'online',

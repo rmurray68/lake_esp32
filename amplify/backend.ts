@@ -60,6 +60,25 @@ backend.triggerReboot.resources.lambda.grantInvoke(
   backend.auth.resources.authenticatedUserIamRole
 );
 
+// Grant permission to invoke external LakeHouse_Logmor_Controller Lambda
+backend.auth.resources.authenticatedUserIamRole.addToPrincipalPolicy(
+  new PolicyStatement({
+    actions: ['lambda:InvokeFunction'],
+    resources: [
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
+    ],
+  })
+);
+
+backend.auth.resources.unauthenticatedUserIamRole.addToPrincipalPolicy(
+  new PolicyStatement({
+    actions: ['lambda:InvokeFunction'],
+    resources: [
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
+    ],
+  })
+);
+
 // Add function names to outputs for frontend
 backend.addOutput({
   custom: {
