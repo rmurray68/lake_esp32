@@ -79,7 +79,28 @@ function Dashboard({ user, signOut }: DashboardProps) {
           status: data.item.internet_ok ? 'online' : 'offline',
           lastSeen: new Date(data.item.timestamp * 1000).toISOString(),
           uptime: data.item.uptime_sec,
-          tesession = await fetchAuthSession();
+          temperature: undefined, // Not in current schema
+          wifiSignal: data.item.signal_strength,
+        });
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching device status:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleReboot = async () => {
+    if (!deviceStatus) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to reboot ${deviceStatus.deviceId}?`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const session = await fetchAuthSession();
       const functionName = (outputs as any).custom?.triggerRebootFunctionName;
       
       if (!functionName) {
@@ -103,28 +124,7 @@ function Dashboard({ user, signOut }: DashboardProps) {
         ? JSON.parse(new TextDecoder().decode(result.Payload))
         : {};
       
-      const data = JSON.parse(responsePayload.body || '{}')
-    } catch (error) {
-      console.error('Error fetching device status:', error);
-      setLoading(false);
-    }
-  };
-
-  const handleReboot = async () => {
-    if (!deviceStatus) return;
-    
-    const confirmed = window.confirm(
-      `Are you sure you want to reboot ${deviceStatus.deviceId}?`
-    );
-    
-    if (!confirmed) return;
-    
-    try {
-      const result: any = await client.queries.triggerReboot({
-        deviceId: deviceStatus.deviceId
-      });
-
-      const data = result.data || result;
+      const data = JSON.parse(responsePayload.body || '{}');
       console.log('Reboot response:', data);
       
       alert('Reboot command sent successfully!');
