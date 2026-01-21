@@ -1,0 +1,90 @@
+PROJECT MANIFEST: Lake House Internet Monitor & Controller
+1. System Overview
+A dual-layered monitoring and recovery system for a remote lake house.
+
+Watchdog: XIAO ESP32-C3 monitoring local Wi-Fi/Fiber health.
+
+Controller: Cellular-linked Logmor Smart Outlet for hard power cycling.
+
+2. Hardware Identities
+XIAO ESP32-C3:
+
+Role: Pings Google every 60s, logs RSSI and status to AWS.
+
+Signal Performance: ~ -34dBm (with external antenna).
+
+Logmor Outlet (Particle-based):
+
+Device ID: e00fce6876c70a0847482f67
+
+Roles: A (Cable Modem), B (eero Wifi).
+
+Power Policy: On Power Restore = ON.
+
+3. Backend Infrastructure (AWS)
+Database: DynamoDB Table LakeHouse_Logs (Stores uptime_sec, rssi, internet_ok).
+
+Alerts: SNS (Simple Notification Service) triggered by internet failure.
+
+Controller (Lambda): LakeHouse_Logmor_Controller (Python 3.12).
+
+Functionality: 1. GET: Returns device health (Cell signal, Relay status, Temp). 2. POST (Action: Reboot): Triggers 30s hardware PowerCycle. 3. Safety-Net: Automatically forces relay ON if found in OFF state.
+
+Secret Security: Authenticates via Environment Variable MY_SECRET.
+
+4. API Access (Current)
+Method: AWS Lambda Function URL.
+
+Authentication: URL Parameter ?key=[MY_SECRET].
+
+Actions: ?action=reboot or default check.
+
+5. Goals for Phase 4 ✅ COMPLETED (January 2026)
+Platform: AWS Amplify Gen 2 (Code-first infrastructure).
+
+UI: Modern React web dashboard with Material-UI components.
+  - Device Status Card: Shows online/offline, uptime, temperature, WiFi signal
+  - Reboot Control: Button with confirmation dialog
+  - Recent Activity: Table of health check logs
+  - Responsive Design: Works on laptop and iPhone
+
+Authentication: AWS Cognito (secure user management).
+
+Backend: Serverless Lambda functions integrated with existing infrastructure.
+  - getDeviceStatus: Queries DynamoDB for device status
+  - triggerReboot: Invokes existing Logmor Lambda for power cycling
+  
+Integration: Designed to connect to existing AWS resources:
+  - DynamoDB: LakeHouse_Logs table
+  - Lambda: LakeHouse_Logmor_Controller
+  - IoT Core: Real-time PubSub from ESP32
+  - SNS: Email notifications on failures
+
+Status: Frontend working with mock data, backend ready to deploy
+Files: See QUICK_START.md, AMPLIFY_SETUP.md, INTEGRATION_GUIDE.md
+
+6. New Web Dashboard Architecture (January 2026)
+Frontend: React + TypeScript + Vite + Material-UI
+  Location: web-dashboard/
+  Running at: http://localhost:5173 (development)
+  Features: Authentication, responsive UI, real-time updates ready
+  
+Backend: AWS Amplify Gen 2
+  Location: amplify/
+  Resources: Auth (Cognito), Lambda functions, IAM permissions
+  Deployment: Sandbox (development) or Amplify Console (production)
+
+Deployment Options:
+  1. Local Sandbox: npx ampx sandbox (requires Node.js 22)
+  2. Amplify Console: Push to GitHub, auto-deploys
+
+Documentation:
+  - QUICK_START.md: Get started guide
+  - AMPLIFY_SETUP.md: Detailed setup instructions  
+  - INTEGRATION_GUIDE.md: Connect to existing AWS resources
+  - DEPLOYMENT_CHECKLIST.md: Production deployment steps
+  - PROJECT_SUMMARY.md: Complete project overview
+
+Next Steps: Deploy backend and connect to real DynamoDB/Lambda
+
+How to move to VS Code & Amplify ✅ DONE
