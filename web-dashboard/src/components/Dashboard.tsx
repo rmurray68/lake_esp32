@@ -4,14 +4,10 @@ import {
   Toolbar,
   Typography,
   Button,
-  Stack,
   Box,
-  Container,
   CircularProgress,
 } from '@mui/material';
 import type { AuthUser } from 'aws-amplify/auth';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import outputs from '../amplify_outputs.json';
 
 import DeviceStatusCard from './DeviceStatusCard.tsx';
 import RecentLogs from './RecentLogs.tsx';

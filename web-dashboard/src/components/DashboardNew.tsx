@@ -10,19 +10,12 @@ import {
 import type { AuthUser } from 'aws-amplify/auth';
 import DeviceStatusCard from './DeviceStatusCard.tsx';
 import RecentLogs from './RecentLogs.tsx';
+import * as api from '../services/api';
+import type { DeviceStatus } from '../services/api';
 
 interface DashboardProps {
   user: AuthUser | undefined;
   signOut: (() => void) | undefined;
-}
-
-export interface DeviceStatus {
-  deviceId: string;
-  status: 'online' | 'offline' | 'error' | 'unreachable';
-  lastSeen?: string;
-  uptime?: number;
-  temperature?: number;
-  wifiSignal?: number;
 }
 
 function DashboardNew({ user, signOut }: DashboardProps) {
@@ -31,54 +24,26 @@ function DashboardNew({ user, signOut }: DashboardProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchEsp32Status();
-    fetchLogmorStatus();
+    loadDeviceStatuses();
     
-    const interval = setInterval(() => {
-      fetchEsp32Status();
-      fetchLogmorStatus();
-    }, 30000);
+    const interval = setInterval(loadDeviceStatuses, 30000);
     
     return () => clearInterval(interval);
   }, []);
 
-  const fetchEsp32Status = async () => {
+  const loadDeviceStatuses = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/device-status');
-      const data = await response.json();
+      const [esp32, logmor] = await Promise.all([
+        api.fetchEsp32Status(),
+        api.fetchLogmorStatus(),
+      ]);
       
-      if (data.error) throw new Error(data.error);
-      
-      setEsp32Status({
-        deviceId: data.deviceId,
-        status: data.status,
-        lastSeen: data.lastSeen,
-        uptime: data.uptime,
-        temperature: data.temperature,
-        wifiSignal: data.wifiSignal,
-      });
+      setEsp32Status(esp32);
+      setLogmorStatus(logmor);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching ESP32 status:', error);
+      console.error('Error loading device statuses:', error);
       setLoading(false);
-    }
-  };
-
-  const fetchLogmorStatus = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/logmor-status');
-      const data = await response.json();
-      
-      setLogmorStatus({
-        deviceId: 'logmor-switch-01',
-        status: data.status,
-      });
-    } catch (error) {
-      console.error('Error fetching Logmor status:', error);
-      setLogmorStatus({
-        deviceId: 'logmor-switch-01',
-        status: 'error',
-      });
     }
   };
 
@@ -92,14 +57,9 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     if (!confirmed) return;
     
     try {
-      const response = await fetch('http://localhost:3001/api/reboot', {
-        method: 'POST',
-      });
-      const data = await response.json();
-      
-      console.log('Reboot response:', data);
+      await api.triggerReboot(logmorStatus.deviceId);
       alert('Reboot command sent successfully!');
-      setTimeout(fetchLogmorStatus, 2000);
+      setTimeout(loadDeviceStatuses, 2000);
     } catch (error) {
       console.error('Error triggering reboot:', error);
       alert('Failed to trigger reboot');

@@ -13,12 +13,8 @@ import {
   CircularProgress,
   Box,
 } from '@mui/material';
-
-interface LogEntry {
-  timestamp: string;
-  status: 'success' | 'warning' | 'error';
-  message: string;
-}
+import * as api from '../services/api';
+import type { LogEntry } from '../services/api';
 
 interface RecentLogsProps {
   deviceId: string;
@@ -39,8 +35,7 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
 
   const fetchLogs = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/logs');
-      const data = await response.json();
+      const data = await api.fetchRecentLogs();
       setLogs(data);
       setLoading(false);
     } catch (error) {
