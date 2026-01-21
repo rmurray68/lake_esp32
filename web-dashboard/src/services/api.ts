@@ -58,11 +58,32 @@ export async function fetchEsp32Status(): Promise<DeviceStatus> {
 
 // Fetch Logmor switch status
 export async function fetchLogmorStatus(): Promise<DeviceStatus> {
-  // TODO: implement Lambda call for Logmor status
-  return {
-    deviceId: 'logmor-switch-01',
-    status: 'unreachable',
-  };
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const response = await fetch(
+      'https://poatmimq2hxlfo75ngglui4llm0fllpt.lambda-url.us-east-1.on.aws/?key=lakehouse2026',
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    // Lambda is responding, so it's online
+    return {
+      deviceId: 'logmor-switch-01',
+      status: 'online',
+    };
+  } catch (error) {
+    console.error('Logmor status error:', error);
+    return {
+      deviceId: 'logmor-switch-01',
+      status: 'unreachable',
+    };
+  }
 }
 
 // Trigger reboot - calls Lambda directly
