@@ -1,12 +1,11 @@
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import {
-  Container,
   CssBaseline,
   ThemeProvider,
   createTheme,
 } from '@mui/material';
-import Dashboard from './components/Dashboard';
+import DashboardNew from './components/DashboardNew';
 
 const theme = createTheme({
   palette: {
@@ -26,9 +25,7 @@ function App() {
       <CssBaseline />
       <Authenticator>
         {({ signOut, user }) => (
-          <Container maxWidth="lg">
-            <Dashboard user={user} signOut={signOut} />
-          </Container>
+          <DashboardNew user={user} signOut={signOut} />
         )}
       </Authenticator>
     </ThemeProvider>

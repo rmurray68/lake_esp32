@@ -18,15 +18,18 @@ import type { DeviceStatus } from './Dashboard';
 
 interface DeviceStatusCardProps {
   device: DeviceStatus;
-  onReboot: () => void;
+  title?: string;
+  onReboot?: () => void;
 }
 
-function DeviceStatusCard({ device, onReboot }: DeviceStatusCardProps) {
+function DeviceStatusCard({ device, title, onReboot }: DeviceStatusCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
         return 'success';
       case 'offline':
+        return 'error';
+      case 'unreachable':
         return 'error';
       case 'error':
         return 'warning';
@@ -57,11 +60,11 @@ function DeviceStatusCard({ device, onReboot }: DeviceStatusCardProps) {
   };
 
   return (
-    <Card>
-      <CardContent>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h5" component="div">
-            Logmor Switch
+            {title || device.deviceId}
           </Typography>
           <Chip
             label={device.status.toUpperCase()}
@@ -75,77 +78,83 @@ function DeviceStatusCard({ device, onReboot }: DeviceStatusCardProps) {
         </Typography>
 
         <Stack spacing={2} sx={{ mt: 2 }}>
-          <Stack direction="row" spacing={2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-              <AccessTime fontSize="small" color="action" />
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Last Seen
-                </Typography>
-                <Typography variant="body2">
-                  {formatLastSeen(device.lastSeen)}
-                </Typography>
-              </Box>
-            </Box>
+          {device.lastSeen && (
+            <>
+              <Stack direction="row" spacing={2}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                  <AccessTime fontSize="small" color="action" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Last Seen
+                    </Typography>
+                    <Typography variant="body2">
+                      {formatLastSeen(device.lastSeen)}
+                    </Typography>
+                  </Box>
+                </Box>
 
-          {device.uptime !== undefined && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-              <PowerSettingsNew fontSize="small" color="action" />
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Uptime
-                </Typography>
-                <Typography variant="body2">
-                  {formatUptime(device.uptime)}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-          </Stack>
+                {device.uptime !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                    <PowerSettingsNew fontSize="small" color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Uptime
+                      </Typography>
+                      <Typography variant="body2">
+                        {formatUptime(device.uptime)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
 
-          <Stack direction="row" spacing={2}>
-          {device.temperature !== undefined && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-              <Thermostat fontSize="small" color="action" />
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Temperature
-                </Typography>
-                <Typography variant="body2">
-                  {device.temperature}°C
-                </Typography>
-              </Box>
-            </Box>
-          )}
+              <Stack direction="row" spacing={2}>
+                {device.temperature !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                    <Thermostat fontSize="small" color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Temperature
+                      </Typography>
+                      <Typography variant="body2">
+                        {device.temperature}°C
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
 
-          {device.wifiSignal !== undefined && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-              <WifiTwoTone fontSize="small" color="action" />
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  WiFi Signal
-                </Typography>
-                <Typography variant="body2">
-                  {device.wifiSignal} dBm
-                </Typography>
-              </Box>
-            </Box>
+                {device.wifiSignal !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                    <WifiTwoTone fontSize="small" color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        WiFi Signal
+                      </Typography>
+                      <Typography variant="body2">
+                        {device.wifiSignal} dBm
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
+            </>
           )}
-          </Stack>
         </Stack>
       </CardContent>
-      <CardActions>
-        <Button
-          size="small"
-          variant="contained"
-          color="warning"
-          startIcon={<PowerSettingsNew />}
-          onClick={onReboot}
-          disabled={device.status === 'offline'}
-        >
-          Reboot Device
-        </Button>
-      </CardActions>
+      {onReboot && (
+        <CardActions>
+          <Button
+            size="small"
+            variant="contained"
+            color="warning"
+            startIcon={<PowerSettingsNew />}
+            onClick={onReboot}
+            disabled={device.status !== 'online'}
+          >
+            Reboot Device
+          </Button>
+        </CardActions>
+      )}
     </Card>
   );
 }

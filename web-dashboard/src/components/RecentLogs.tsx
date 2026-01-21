@@ -39,36 +39,9 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
 
   const fetchLogs = async () => {
     try {
-      // TODO: Query DynamoDB for recent logs
-      // For now, using mock data
-      const mockLogs: LogEntry[] = [
-        {
-          timestamp: new Date(Date.now() - 120000).toISOString(),
-          status: 'success',
-          message: 'Health check passed',
-        },
-        {
-          timestamp: new Date(Date.now() - 180000).toISOString(),
-          status: 'success',
-          message: 'Health check passed',
-        },
-        {
-          timestamp: new Date(Date.now() - 240000).toISOString(),
-          status: 'success',
-          message: 'Health check passed',
-        },
-        {
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          status: 'warning',
-          message: 'High temperature detected',
-        },
-        {
-          timestamp: new Date(Date.now() - 360000).toISOString(),
-          status: 'success',
-          message: 'Health check passed',
-        },
-      ];
-      setLogs(mockLogs);
+      const response = await fetch('http://localhost:3001/api/logs');
+      const data = await response.json();
+      setLogs(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -101,7 +74,7 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
   };
 
   return (
-    <Card>
+    <Card sx={{ width: '100%' }}>
       <CardContent>
         <Typography variant="h5" component="div" gutterBottom>
           Recent Activity

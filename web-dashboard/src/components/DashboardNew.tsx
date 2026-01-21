@@ -4,15 +4,10 @@ import {
   Toolbar,
   Typography,
   Button,
-  Stack,
   Box,
-  Container,
   CircularProgress,
 } from '@mui/material';
 import type { AuthUser } from 'aws-amplify/auth';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import outputs from '../amplify_outputs.json';
-
 import DeviceStatusCard from './DeviceStatusCard.tsx';
 import RecentLogs from './RecentLogs.tsx';
 
@@ -30,17 +25,15 @@ export interface DeviceStatus {
   wifiSignal?: number;
 }
 
-function Dashboard({ user, signOut }: DashboardProps) {
+function DashboardNew({ user, signOut }: DashboardProps) {
   const [esp32Status, setEsp32Status] = useState<DeviceStatus | null>(null);
   const [logmorStatus, setLogmorStatus] = useState<DeviceStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch initial device status
     fetchEsp32Status();
     fetchLogmorStatus();
     
-    // Set up polling for status updates (every 30 seconds)
     const interval = setInterval(() => {
       fetchEsp32Status();
       fetchLogmorStatus();
@@ -54,11 +47,7 @@ function Dashboard({ user, signOut }: DashboardProps) {
       const response = await fetch('http://localhost:3001/api/device-status');
       const data = await response.json();
       
-      console.log('ESP32 status:', data);
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      if (data.error) throw new Error(data.error);
       
       setEsp32Status({
         deviceId: data.deviceId,
@@ -79,8 +68,6 @@ function Dashboard({ user, signOut }: DashboardProps) {
     try {
       const response = await fetch('http://localhost:3001/api/logmor-status');
       const data = await response.json();
-      
-      console.log('Logmor status:', data);
       
       setLogmorStatus({
         deviceId: 'logmor-switch-01',
@@ -111,10 +98,7 @@ function Dashboard({ user, signOut }: DashboardProps) {
       const data = await response.json();
       
       console.log('Reboot response:', data);
-      
       alert('Reboot command sent successfully!');
-      
-      // Refresh status after a delay
       setTimeout(fetchLogmorStatus, 2000);
     } catch (error) {
       console.error('Error triggering reboot:', error);
@@ -123,10 +107,10 @@ function Dashboard({ user, signOut }: DashboardProps) {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, width: '100%' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Lake ESP32 Dashboard
           </Typography>
           <Typography variant="body2" sx={{ mr: 2 }}>
@@ -138,18 +122,23 @@ function Dashboard({ user, signOut }: DashboardProps) {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <>
+            {/* Device Cards Grid */}
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: 'repeat(2, 1fr)',
+                },
                 gap: 3,
+                mb: 3,
               }}
             >
               {esp32Status && (
@@ -166,12 +155,14 @@ function Dashboard({ user, signOut }: DashboardProps) {
                 />
               )}
             </Box>
+
+            {/* Recent Logs */}
             <RecentLogs deviceId={esp32Status?.deviceId || ''} />
-          </Box>
+          </>
         )}
       </Box>
     </Box>
   );
 }
 
-export default Dashboard;
+export default DashboardNew;
