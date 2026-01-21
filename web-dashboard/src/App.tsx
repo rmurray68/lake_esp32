@@ -6,6 +6,11 @@ import {
   createTheme,
 } from '@mui/material';
 import DashboardNew from './components/DashboardNew';
+import DashboardProd from './components/DashboardProd';
+
+// Use local backend in development, Lambda in production
+const USE_LOCAL_BACKEND = import.meta.env.VITE_USE_LOCAL_BACKEND === 'true';
+const Dashboard = USE_LOCAL_BACKEND ? DashboardNew : DashboardProd;
 
 const theme = createTheme({
   palette: {
@@ -25,7 +30,7 @@ function App() {
       <CssBaseline />
       <Authenticator>
         {({ signOut, user }) => (
-          <DashboardNew user={user} signOut={signOut} />
+          <Dashboard user={user} signOut={signOut} />
         )}
       </Authenticator>
     </ThemeProvider>
