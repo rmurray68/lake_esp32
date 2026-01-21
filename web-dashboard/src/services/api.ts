@@ -8,6 +8,8 @@ export interface DeviceStatus {
   uptime?: number;
   temperature?: number;
   wifiSignal?: number;
+  cellSignal?: number;
+  relayPower?: string;
 }
 
 export interface LogEntry {
@@ -66,17 +68,26 @@ export async function fetchLogmorStatus(): Promise<DeviceStatus> {
       credentials: session.credentials,
     });
 
-    await lambda.send(
+    const result = await lambda.send(
       new InvokeCommand({
         FunctionName: 'LakeHouse_Logmor_Controller',
         Payload: JSON.stringify({ action: 'status' }),
       })
     );
     
-    // Lambda responded successfully, it's online
+    const responsePayload = result.Payload 
+      ? JSON.parse(new TextDecoder().decode(result.Payload))
+      : {};
+    
+    const data = JSON.parse(responsePayload.body || '{}');
+    
     return {
       deviceId: 'logmor-switch-01',
-      status: 'online',
+      status: data.relayPower === 'ON' ? 'online' : 'offline',
+      lastSeen: data.lastContact,
+      uptime: data.uptimeSeconds,
+      temperature: data.temperature,
+      wifiSignal: data.cellStrength, // Cell signal displayed as WiFi signal
     };
   } catch (error) {
     console.error('Logmor status error:', error);
@@ -88,14 +99,8 @@ export async function fetchLogmorStatus(): Promise<DeviceStatus> {
 }
 
 // Trigger reboot - calls Lambda directly
-export async function triggerReboot(deviceId: string): Promise<void> {
+export async function triggerReboot(_deviceId: string): Promise<void> {
   const session = await fetchAuthSession();
-  const functionName = (outputs as any).custom?.triggerRebootFunctionName;
-  
-  if (!functionName) {
-    throw new Error('triggerReboot function not configured');
-  }
-
   const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
   const lambda = new LambdaClient({
     region: 'us-east-1',
@@ -104,8 +109,8 @@ export async function triggerReboot(deviceId: string): Promise<void> {
 
   const result = await lambda.send(
     new InvokeCommand({
-      FunctionName: functionName,
-      Payload: JSON.stringify({ deviceId }),
+      FunctionName: 'LakeHouse_Logmor_Controller',
+      Payload: JSON.stringify({ action: 'reboot' }),
     })
   );
 
