@@ -39,3 +39,11 @@ backend.getDeviceStatus.resources.lambda.grantInvoke(
 backend.triggerReboot.resources.lambda.grantInvoke(
   backend.auth.resources.authenticatedUserIamRole
 );
+
+// Add function names to outputs for frontend
+backend.addOutput({
+  custom: {
+    getDeviceStatusFunctionName: backend.getDeviceStatus.resources.lambda.functionName,
+    triggerRebootFunctionName: backend.triggerReboot.resources.lambda.functionName,
+  },
+});

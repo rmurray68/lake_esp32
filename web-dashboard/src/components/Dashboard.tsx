@@ -6,10 +6,13 @@ import {
   Button,
   Stack,
   Box,
+  Container,
   CircularProgress,
 } from '@mui/material';
 import type { AuthUser } from 'aws-amplify/auth';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import outputs from '../amplify_outputs.json';
+
 import DeviceStatusCard from './DeviceStatusCard.tsx';
 import RecentLogs from './RecentLogs.tsx';
 
@@ -43,19 +46,32 @@ function Dashboard({ user, signOut }: DashboardProps) {
 
   const fetchDeviceStatus = async () => {
     try {
-      const functionUrl = (outputs as any).custom?.getDeviceStatus;
+      const session = await fetchAuthSession();
+      const functionName = (outputs as any).custom?.getDeviceStatusFunctionName;
       
-      if (!functionUrl) {
-        throw new Error('getDeviceStatus function URL not found in outputs');
+      if (!functionName) {
+        console.error('Function name not found in outputs:', outputs);
+        throw new Error('getDeviceStatus function not configured');
       }
 
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId: 'URL_Monitor_XIAO' }),
+      const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+      const lambda = new LambdaClient({
+        region: 'us-east-1',
+        credentials: session.credentials,
       });
 
-      const data = await response.json();
+      const result = await lambda.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          Payload: JSON.stringify({ deviceId: 'URL_Monitor_XIAO' }),
+        })
+      );
+
+      const responsePayload = result.Payload 
+        ? JSON.parse(new TextDecoder().decode(result.Payload))
+        : {};
+      
+      const data = JSON.parse(responsePayload.body || '{}');
       
       if (data.item) {
         setDeviceStatus({
@@ -63,11 +79,31 @@ function Dashboard({ user, signOut }: DashboardProps) {
           status: data.item.internet_ok ? 'online' : 'offline',
           lastSeen: new Date(data.item.timestamp * 1000).toISOString(),
           uptime: data.item.uptime_sec,
-          temperature: undefined, // Not in current schema
-          wifiSignal: data.item.signal_strength,
-        });
+          tesession = await fetchAuthSession();
+      const functionName = (outputs as any).custom?.triggerRebootFunctionName;
+      
+      if (!functionName) {
+        throw new Error('triggerReboot function not configured');
       }
-      setLoading(false);
+
+      const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+      const lambda = new LambdaClient({
+        region: 'us-east-1',
+        credentials: session.credentials,
+      });
+
+      const result = await lambda.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          Payload: JSON.stringify({ deviceId: deviceStatus.deviceId }),
+        })
+      );
+
+      const responsePayload = result.Payload 
+        ? JSON.parse(new TextDecoder().decode(result.Payload))
+        : {};
+      
+      const data = JSON.parse(responsePayload.body || '{}')
     } catch (error) {
       console.error('Error fetching device status:', error);
       setLoading(false);
@@ -84,19 +120,11 @@ function Dashboard({ user, signOut }: DashboardProps) {
     if (!confirmed) return;
     
     try {
-      const functionUrl = (outputs as any).custom?.triggerReboot;
-      
-      if (!functionUrl) {
-        throw new Error('triggerReboot function URL not found in outputs');
-      }
-
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId: deviceStatus.deviceId }),
+      const result: any = await client.queries.triggerReboot({
+        deviceId: deviceStatus.deviceId
       });
 
-      const data = await response.json();
+      const data = result.data || result;
       console.log('Reboot response:', data);
       
       alert('Reboot command sent successfully!');
@@ -125,7 +153,7 @@ function Dashboard({ user, signOut }: DashboardProps) {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ mt: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <CircularProgress />
@@ -149,7 +177,7 @@ function Dashboard({ user, signOut }: DashboardProps) {
             </Box>
           </Stack>
         )}
-      </Box>
+      </Container>
     </Box>
   );
 }
