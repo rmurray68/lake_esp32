@@ -81,9 +81,10 @@ export async function fetchLogmorStatus(): Promise<DeviceStatus> {
     
     const data = JSON.parse(responsePayload.body || '{}');
     
+    // Device is online if we got a response, relay power is separate status
     return {
       deviceId: 'logmor-switch-01',
-      status: data.relayPower === 'ON' ? 'online' : 'offline',
+      status: 'online',
       lastSeen: data.lastContact,
       uptime: data.uptimeSeconds,
       temperature: data.temperature,
