@@ -9,7 +9,7 @@ export interface DeviceStatus {
   temperature?: number;
   wifiSignal?: number;
   cellSignal?: number;
-  relayPower?: string;
+  relayPower?: 'ON' | 'OFF';
 }
 
 export interface LogEntry {
@@ -88,6 +88,7 @@ export async function fetchLogmorStatus(): Promise<DeviceStatus> {
       uptime: data.uptimeSeconds,
       temperature: data.temperature,
       wifiSignal: data.cellStrength, // Cell signal displayed as WiFi signal
+      relayPower: data.relayPower,
     };
   } catch (error) {
     console.error('Logmor status error:', error);

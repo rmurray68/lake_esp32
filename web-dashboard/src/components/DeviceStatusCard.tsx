@@ -95,6 +95,17 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycl
           Device ID: {device.deviceId}
         </Typography>
 
+        {device.relayPower && (
+          <Box sx={{ mt: 1 }}>
+            <Chip
+              label={`Relay: ${device.relayPower}`}
+              color={device.relayPower === 'ON' ? 'success' : 'default'}
+              size="small"
+              variant="outlined"
+            />
+          </Box>
+        )}
+
         <Stack spacing={2} sx={{ mt: 2 }}>
           {device.lastSeen && (
             <>
@@ -180,7 +191,7 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycl
               color="success"
               startIcon={<Power />}
               onClick={onPowerOn}
-              disabled={device.status !== 'online' || cycling}
+              disabled={device.status !== 'online' || cycling || device.relayPower === 'ON'}
             >
               Power ON
             </Button>
@@ -192,7 +203,7 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycl
               color="error"
               startIcon={<PowerOff />}
               onClick={onPowerOff}
-              disabled={device.status !== 'online' || cycling}
+              disabled={device.status !== 'online' || cycling || device.relayPower === 'OFF'}
             >
               Power OFF
             </Button>
