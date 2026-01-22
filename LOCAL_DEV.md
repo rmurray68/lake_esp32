@@ -4,18 +4,21 @@ This document explains how to run the web dashboard locally.
 
 ## Architecture
 
-The setup uses a **single code path** - both local development and production call the same Lambda functions:
+The setup uses a **single code path** - both local development and production call the same Lambda functions directly using AWS SDK with IAM authentication:
 
 ### Local & Production (Unified)
 ```
 Browser (localhost:5173 OR amplifyapp.com)
   ↓
-AWS Amplify Auth (Cognito)
+AWS Amplify Auth (Cognito) → IAM Credentials
   ↓
-AWS Lambda Functions (directly)
-  ↓
-AWS DynamoDB
+AWS Lambda Functions (Direct Invocation via SDK)
+  ├── getDeviceStatus → DynamoDB
+  ├── getLogs → DynamoDB
+  └── LakeHouse_Logmor_Controller → Particle.io API
 ```
+
+**Key Change**: No more Function URLs with secret keys. All Lambda invocations use IAM-based authentication via AWS SDK.
 
 The frontend uses the same API layer for both environments - no separate backend server needed.
 
@@ -75,8 +78,13 @@ The application connects to these AWS resources:
 ### Lambda Functions
 - **getDeviceStatus:** Queries DynamoDB for ESP32 latest status
 - **getLogs:** Queries DynamoDB for recent activity (last 10 records)
-- **triggerReboot:** Calls Logmor Lambda via Function URL to trigger reboot
-- **LakeHouse_Logmor_Controller:** Existing Particle.io integration (called via Function URL)
+- **LakeHouse_Logmor_Controller:** Particle.io/Logmor integration with power control
+  - `action='status'`: Get device status (relay, temperature, uptime, cell signal)
+  - `action='reboot'`: PowerCycle (30 second OFF then ON)
+  - `action='on'`: Turn relay power ON
+  - `action='off'`: Turn relay power OFF
+
+**Authentication:** All Lambda calls use IAM-based authentication via Cognito credentials. No Function URLs or API keys required.
 
 ## Environment Variables
 

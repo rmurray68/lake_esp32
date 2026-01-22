@@ -4,23 +4,40 @@ A modern, responsive web dashboard for monitoring and controlling your remote la
 
 ## 🌟 Features
 
-- **Real-time Monitoring**: View device status, uptime, temperature, and WiFi signal strength
-- **Remote Control**: Trigger device reboots with a single click
+- **Real-time Monitoring**: View device status, uptime, temperature, and WiFi/cell signal strength
+- **Remote Power Control**: 
+  - **Reboot (30s)** - Power cycle with automatic restore
+  - **Power ON** - Turn relay on immediately
+  - **Power OFF** - Full power down with manual restore
+- **Smart UI**: Buttons automatically enable/disable based on relay state
+- **Visual Feedback**: 
+  - Green "Relay: ON" / Red "Relay: OFF" status chips
+  - Live countdown timer during power cycling
+  - Manual refresh button for instant status updates
 - **Activity Logs**: See recent health checks and system events
 - **Responsive Design**: Works perfectly on both desktop and mobile devices
-- **Secure Authentication**: AWS Cognito user management
+- **Secure Authentication**: AWS Cognito with IAM-based Lambda invocation
 - **Serverless Architecture**: Scales automatically, pay only for what you use
 
-## 📱 Screenshots
+## 📱 Dashboard Interface
 
 The dashboard displays:
-- Device online/offline status with color indicators
-- Last seen timestamp
-- System uptime
-- Temperature readings
-- WiFi signal strength
-- Recent activity log
-- Reboot button with confirmation dialog
+- **Device Status Cards**:
+  - Device online/offline status with color-coded chips
+  - Relay power status (ON/OFF) with green/red indicators
+  - Last seen timestamp with human-readable format
+  - System uptime tracking
+  - Temperature and signal strength readings
+  - Manual refresh button for instant updates
+
+- **Power Control** (Logmor):
+  - Reboot (30s) - Orange button, shows countdown timer
+  - Power ON - Green button, disabled when already ON
+  - Power OFF - Red button with confirmation, disabled when already OFF
+
+- **Recent Activity Log**:
+  - Last 10 health check events from ESP32
+  - Timestamps and status indicators
 
 ## 🚀 Quick Start
 

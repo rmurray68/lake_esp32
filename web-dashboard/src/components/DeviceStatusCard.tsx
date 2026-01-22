@@ -203,7 +203,7 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, onRe
               color="success"
               startIcon={<Power />}
               onClick={onPowerOn}
-              disabled={device.status !== 'online' || cycling || device.relayPower === 'ON'}
+              disabled={device.status !== 'online' || cycling || !device.relayPower || device.relayPower === 'ON'}
             >
               Power ON
             </Button>
@@ -215,7 +215,7 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, onRe
               color="error"
               startIcon={<PowerOff />}
               onClick={onPowerOff}
-              disabled={device.status !== 'online' || cycling || device.relayPower === 'OFF'}
+              disabled={device.status !== 'online' || cycling || !device.relayPower || device.relayPower === 'OFF'}
             >
               Power OFF
             </Button>
