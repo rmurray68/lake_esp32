@@ -149,6 +149,7 @@ function DashboardNew({ user, signOut }: DashboardProps) {
                 <DeviceStatusCard
                   device={esp32Status}
                   title="URL Monitor (ESP32)"
+                  onRefresh={loadDeviceStatuses}
                 />
               )}
               {logmorStatus && (
@@ -158,6 +159,7 @@ function DashboardNew({ user, signOut }: DashboardProps) {
                   onReboot={handleReboot}
                   onPowerOn={handlePowerOn}
                   onPowerOff={handlePowerOff}
+                  onRefresh={loadDeviceStatuses}
                   cycling={cycling}
                   countdown={countdown}
                 />

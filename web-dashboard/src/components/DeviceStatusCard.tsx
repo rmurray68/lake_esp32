@@ -8,6 +8,8 @@ import {
   Box,
   Stack,
   Alert,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   PowerSettingsNew,
@@ -16,6 +18,7 @@ import {
   AccessTime,
   Power,
   PowerOff,
+  Refresh,
 } from '@mui/icons-material';
 import type { DeviceStatus } from '../services/api';
 
@@ -25,11 +28,12 @@ interface DeviceStatusCardProps {
   onReboot?: () => void;
   onPowerOn?: () => void;
   onPowerOff?: () => void;
+  onRefresh?: () => void;
   cycling?: boolean;
   countdown?: number;
 }
 
-function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycling, countdown }: DeviceStatusCardProps) {
+function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, onRefresh, cycling, countdown }: DeviceStatusCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
@@ -73,11 +77,20 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycl
           <Typography variant="h5" component="div">
             {title || device.deviceId}
           </Typography>
-          <Chip
-            label={device.status.toUpperCase()}
-            color={getStatusColor(device.status)}
-            size="small"
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={device.status.toUpperCase()}
+              color={getStatusColor(device.status)}
+              size="small"
+            />
+            {onRefresh && (
+              <Tooltip title="Refresh status">
+                <IconButton size="small" onClick={onRefresh} color="primary">
+                  <Refresh fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
 
         {cycling && countdown !== undefined && countdown > 0 && (
