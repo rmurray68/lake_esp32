@@ -66,6 +66,7 @@ backend.auth.resources.authenticatedUserIamRole.addToPrincipalPolicy(
     actions: ['lambda:InvokeFunction'],
     resources: [
       'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_ESP32_Controller',
     ],
   })
 );
@@ -75,6 +76,7 @@ backend.auth.resources.unauthenticatedUserIamRole.addToPrincipalPolicy(
     actions: ['lambda:InvokeFunction'],
     resources: [
       'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_ESP32_Controller',
     ],
   })
 );
