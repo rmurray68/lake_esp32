@@ -24,6 +24,8 @@ function DashboardNew({ user, signOut }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [cycling, setCycling] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [esp32Rebooting, setEsp32Rebooting] = useState(false);
+  const [esp32Countdown, setEsp32Countdown] = useState(0);
 
   useEffect(() => {
     loadDeviceStatuses();
@@ -42,6 +44,16 @@ function DashboardNew({ user, signOut }: DashboardProps) {
       loadDeviceStatuses();
     }
   }, [countdown, cycling]);
+
+  useEffect(() => {
+    if (esp32Countdown > 0) {
+      const timer = setTimeout(() => setEsp32Countdown(esp32Countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (esp32Rebooting && esp32Countdown === 0) {
+      setEsp32Rebooting(false);
+      loadDeviceStatuses();
+    }
+  }, [esp32Countdown, esp32Rebooting]);
 
   const loadDeviceStatuses = async () => {
     try {
@@ -110,6 +122,20 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     }
   };
 
+  const handleEsp32Reboot = async () => {
+    const confirmed = window.confirm('Are you sure you want to reboot the ESP32 device?');
+    if (!confirmed) return;
+    
+    try {
+      await api.triggerEsp32Reboot();
+      setEsp32Rebooting(true);
+      setEsp32Countdown(30);
+    } catch (error) {
+      console.error('Error rebooting ESP32:', error);
+      alert('Failed to send reboot command');
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static">
@@ -149,7 +175,10 @@ function DashboardNew({ user, signOut }: DashboardProps) {
                 <DeviceStatusCard
                   device={esp32Status}
                   title="URL Monitor (ESP32)"
+                  onReboot={handleEsp32Reboot}
                   onRefresh={loadDeviceStatuses}
+                  cycling={esp32Rebooting}
+                  countdown={esp32Countdown}
                 />
               )}
               {logmorStatus && (

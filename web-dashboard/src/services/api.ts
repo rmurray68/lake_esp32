@@ -171,6 +171,30 @@ export async function powerOff(_deviceId: string): Promise<void> {
   console.log('Power OFF response:', responsePayload);
 }
 
+// Trigger ESP32 reboot
+export async function triggerEsp32Reboot(): Promise<void> {
+  const session = await fetchAuthSession();
+  
+  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+  const lambda = new LambdaClient({
+    region: 'us-east-1',
+    credentials: session.credentials,
+  });
+
+  const result = await lambda.send(
+    new InvokeCommand({
+      FunctionName: 'LakeHouse_ESP32_Controller',
+      Payload: JSON.stringify({ action: 'reboot' }),
+    })
+  );
+
+  const responsePayload = result.Payload 
+    ? JSON.parse(new TextDecoder().decode(result.Payload))
+    : {};
+  
+  console.log('ESP32 reboot response:', responsePayload);
+}
+
 // Fetch recent logs - calls Lambda directly
 export async function fetchRecentLogs(): Promise<LogEntry[]> {
   const session = await fetchAuthSession();
