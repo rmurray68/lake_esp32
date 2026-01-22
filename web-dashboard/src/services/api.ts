@@ -121,6 +121,54 @@ export async function triggerReboot(_deviceId: string): Promise<void> {
   console.log('Reboot response:', responsePayload);
 }
 
+// Power on device
+export async function powerOn(_deviceId: string): Promise<void> {
+  const session = await fetchAuthSession();
+  
+  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+  const lambda = new LambdaClient({
+    region: 'us-east-1',
+    credentials: session.credentials,
+  });
+
+  const result = await lambda.send(
+    new InvokeCommand({
+      FunctionName: 'LakeHouse_Logmor_Controller',
+      Payload: JSON.stringify({ action: 'on' }),
+    })
+  );
+
+  const responsePayload = result.Payload 
+    ? JSON.parse(new TextDecoder().decode(result.Payload))
+    : {};
+  
+  console.log('Power ON response:', responsePayload);
+}
+
+// Power off device
+export async function powerOff(_deviceId: string): Promise<void> {
+  const session = await fetchAuthSession();
+  
+  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+  const lambda = new LambdaClient({
+    region: 'us-east-1',
+    credentials: session.credentials,
+  });
+
+  const result = await lambda.send(
+    new InvokeCommand({
+      FunctionName: 'LakeHouse_Logmor_Controller',
+      Payload: JSON.stringify({ action: 'off' }),
+    })
+  );
+
+  const responsePayload = result.Payload 
+    ? JSON.parse(new TextDecoder().decode(result.Payload))
+    : {};
+  
+  console.log('Power OFF response:', responsePayload);
+}
+
 // Fetch recent logs - calls Lambda directly
 export async function fetchRecentLogs(): Promise<LogEntry[]> {
   const session = await fetchAuthSession();

@@ -7,12 +7,15 @@ import {
   Chip,
   Box,
   Stack,
+  Alert,
 } from '@mui/material';
 import {
   PowerSettingsNew,
   WifiTwoTone,
   Thermostat,
   AccessTime,
+  Power,
+  PowerOff,
 } from '@mui/icons-material';
 import type { DeviceStatus } from '../services/api';
 
@@ -20,9 +23,13 @@ interface DeviceStatusCardProps {
   device: DeviceStatus;
   title?: string;
   onReboot?: () => void;
+  onPowerOn?: () => void;
+  onPowerOff?: () => void;
+  cycling?: boolean;
+  countdown?: number;
 }
 
-function DeviceStatusCard({ device, title, onReboot }: DeviceStatusCardProps) {
+function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycling, countdown }: DeviceStatusCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
@@ -72,6 +79,17 @@ function DeviceStatusCard({ device, title, onReboot }: DeviceStatusCardProps) {
             size="small"
           />
         </Box>
+
+        {cycling && countdown !== undefined && countdown > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2" fontWeight="bold">
+              CYCLING - {countdown}s remaining
+            </Typography>
+            <Typography variant="caption">
+              Power will restore automatically
+            </Typography>
+          </Alert>
+        )}
 
         <Typography variant="body2" color="text.secondary" gutterBottom>
           Device ID: {device.deviceId}
@@ -141,18 +159,44 @@ function DeviceStatusCard({ device, title, onReboot }: DeviceStatusCardProps) {
           )}
         </Stack>
       </CardContent>
-      {onReboot && (
-        <CardActions>
-          <Button
-            size="small"
-            variant="contained"
-            color="warning"
-            startIcon={<PowerSettingsNew />}
-            onClick={onReboot}
-            disabled={device.status !== 'online'}
-          >
-            Reboot Device
-          </Button>
+      {(onReboot || onPowerOn || onPowerOff) && (
+        <CardActions sx={{ flexWrap: 'wrap', gap: 1, p: 2 }}>
+          {onReboot && (
+            <Button
+              size="small"
+              variant="contained"
+              color="warning"
+              startIcon={<PowerSettingsNew />}
+              onClick={onReboot}
+              disabled={device.status !== 'online' || cycling}
+            >
+              Reboot (30s)
+            </Button>
+          )}
+          {onPowerOn && (
+            <Button
+              size="small"
+              variant="contained"
+              color="success"
+              startIcon={<Power />}
+              onClick={onPowerOn}
+              disabled={device.status !== 'online' || cycling}
+            >
+              Power ON
+            </Button>
+          )}
+          {onPowerOff && (
+            <Button
+              size="small"
+              variant="contained"
+              color="error"
+              startIcon={<PowerOff />}
+              onClick={onPowerOff}
+              disabled={device.status !== 'online' || cycling}
+            >
+              Power OFF
+            </Button>
+          )}
         </CardActions>
       )}
     </Card>

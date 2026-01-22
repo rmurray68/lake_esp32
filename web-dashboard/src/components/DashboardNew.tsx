@@ -22,6 +22,8 @@ function DashboardNew({ user, signOut }: DashboardProps) {
   const [esp32Status, setEsp32Status] = useState<DeviceStatus | null>(null);
   const [logmorStatus, setLogmorStatus] = useState<DeviceStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cycling, setCycling] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     loadDeviceStatuses();
@@ -30,6 +32,16 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (cycling && countdown === 0) {
+      setCycling(false);
+      loadDeviceStatuses();
+    }
+  }, [countdown, cycling]);
 
   const loadDeviceStatuses = async () => {
     try {
@@ -58,11 +70,43 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     
     try {
       await api.triggerReboot(logmorStatus.deviceId);
-      alert('Reboot command sent successfully!');
-      setTimeout(loadDeviceStatuses, 2000);
+      setCycling(true);
+      setCountdown(30);
     } catch (error) {
       console.error('Error triggering reboot:', error);
       alert('Failed to trigger reboot');
+    }
+  };
+
+  const handlePowerOn = async () => {
+    if (!logmorStatus) return;
+    
+    try {
+      await api.powerOn(logmorStatus.deviceId);
+      alert('Power ON command sent!');
+      setTimeout(loadDeviceStatuses, 2000);
+    } catch (error) {
+      console.error('Error turning power on:', error);
+      alert('Failed to turn power on');
+    }
+  };
+
+  const handlePowerOff = async () => {
+    if (!logmorStatus) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to turn OFF power? This will disconnect the internet!`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await api.powerOff(logmorStatus.deviceId);
+      alert('Power OFF command sent!');
+      setTimeout(loadDeviceStatuses, 2000);
+    } catch (error) {
+      console.error('Error turning power off:', error);
+      alert('Failed to turn power off');
     }
   };
 
@@ -112,6 +156,10 @@ function DashboardNew({ user, signOut }: DashboardProps) {
                   device={logmorStatus}
                   title="Remote LTE Switch (Logmor)"
                   onReboot={handleReboot}
+                  onPowerOn={handlePowerOn}
+                  onPowerOff={handlePowerOff}
+                  cycling={cycling}
+                  countdown={countdown}
                 />
               )}
             </Box>
