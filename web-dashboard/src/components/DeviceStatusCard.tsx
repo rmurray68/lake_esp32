@@ -99,9 +99,8 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, cycl
           <Box sx={{ mt: 1 }}>
             <Chip
               label={`Relay: ${device.relayPower}`}
-              color={device.relayPower === 'ON' ? 'success' : 'default'}
+              color={device.relayPower === 'ON' ? 'success' : 'error'}
               size="small"
-              variant="outlined"
             />
           </Box>
         )}

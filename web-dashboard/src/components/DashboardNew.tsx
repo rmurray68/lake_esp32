@@ -83,8 +83,8 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     
     try {
       await api.powerOn(logmorStatus.deviceId);
-      alert('Power ON command sent!');
-      setTimeout(loadDeviceStatuses, 2000);
+      // Refresh immediately to show new relay state
+      await loadDeviceStatuses();
     } catch (error) {
       console.error('Error turning power on:', error);
       alert('Failed to turn power on');
@@ -102,8 +102,8 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     
     try {
       await api.powerOff(logmorStatus.deviceId);
-      alert('Power OFF command sent!');
-      setTimeout(loadDeviceStatuses, 2000);
+      // Refresh immediately to show new relay state
+      await loadDeviceStatuses();
     } catch (error) {
       console.error('Error turning power off:', error);
       alert('Failed to turn power off');
