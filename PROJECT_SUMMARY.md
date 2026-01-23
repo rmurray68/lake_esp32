@@ -1,44 +1,97 @@
-# Project Summary: Lake ESP32 Dashboard
+# Project Summary: Lake House Network Dashboard
 
-## ✅ What's Been Built
+## ✅ What's Been Built (January 2026 Update)
 
-I've successfully created a complete AWS Amplify Gen 2 web application for your Lake ESP32 home automation dashboard. Here's what's ready:
+I've successfully created a complete AWS Amplify Gen 2 web application for monitoring your Lake House network via Eero WiFi and Logmor LTE switch. Here's what's ready:
 
 ### Frontend (React + Material-UI + Vite)
 - **Responsive Dashboard** - Works on both laptop and iPhone
-- **Device Status Card** - Shows:
+- **Eero Network Status Card** - Shows:
+  - Network name (RM-WiFi) with online/offline chip
+  - Connected device count with success chip
+  - Disconnected device count with warning chip
+  - Top 5 connected devices (name, location, IP, signal)
+  - Clickable "...and X more" links to view full device lists
+  - Dialog views for all connected and disconnected devices
+  - Recently disconnected devices with last active timestamps
+- **Logmor LTE Switch Card** - Shows:
   - Online/offline status with color-coded chips
+  - Relay power status (ON/OFF) with green/red indicators
+  - Cell signal strength (percentage)
   - Last seen timestamp
-  - Device uptime
-  - Temperature reading
-  - WiFi signal strength
-- **Reboot Control** - Button to trigger device reboot with confirmation dialog
-- **Recent Activity Logs** - Table showing recent health checks and events
-- **Authentication UI** - Cognito-based login/signup (ready when backend deploys)
+  - Device uptime and temperature
+  - Power control buttons (Reboot/ON/OFF)
+- **Admin Token Management** - Settings icon (⚙️) opens dialog:
+  - Step 1: Enter phone number for SMS
+  - Step 2: Enter verification code
+  - Step 3: Success confirmation
+  - Automatically saves session to AWS SSM
+- **Network Issues & Alerts** - Filtered log view:
+  - Shows only errors and warnings (not success messages)
+  - Device disconnection/reconnection events
+  - Low signal strength warnings
+  - Power state change notifications
+  - Empty state message when all systems healthy
 - **Modern Tech Stack** - TypeScript, Vite (fast builds), Material-UI (responsive design)
 
 ### Backend (AWS Amplify Gen 2)
 - **Lambda Functions**:
-  - `getDeviceStatus` - Retrieves device status from DynamoDB
-  - `triggerReboot` - Invokes your existing Lambda to reboot the device
+  - `getEeroHealth` - Fetches Eero network status and device list
+  - `manageEeroToken` - Handles Eero token renewal (login/verify/test)
+  - `getLogs` - Retrieves recent events from DynamoDB
+  - `triggerReboot` - Power control for Logmor switch
+  - `getDeviceStatus` - Gets Logmor device status
+  - `monitorDevices` - **NEW** Periodic monitoring Lambda that:
+    - Polls Eero API every 5 minutes
+    - Polls Logmor API every 5 minutes
+    - Detects device disconnections/reconnections
+    - Detects power state changes
+    - Detects low signal strength
+    - Writes events to DynamoDB with status (success/warning/error)
+- **EventBridge Schedule** - Triggers monitorDevices every 5 minutes
+- **DynamoDB Table** - LakeHouse_Logs:
+  - Stores all monitoring events
+  - 90-day TTL for automatic cleanup
+  - Indexed by deviceId and timestamp
 - **Authentication** - AWS Cognito for secure user management
-- **IAM Permissions** - Pre-configured for Lambda, DynamoDB, and IoT access
+- **IAM Permissions** - Pre-configured for Lambda, DynamoDB, and external Lambda access
 - **Infrastructure as Code** - Everything defined in TypeScript (backend.ts)
 
+### External Integrations
+- **LakeHouse_Eero_Test** - Standalone Lambda for Eero API:
+  - Actions: login, verify, networks, devices
+  - Returns network info, device lists, connection status
+  - Session stored in SSM: /lakehouse/eero/session_cookie
+- **LakeHouse_Logmor_Controller** - Existing Lambda for Logmor:
+  - Actions: status, reboot, on, off
+  - Returns relay power, signal strength, temperature, uptime
+
+### Removed Infrastructure (ESP32 Approach)
+- ❌ ESP32-based URL monitoring device
+- ❌ AWS IoT Core gateway and topics
+- ❌ SNS notifications for ESP32
+- ❌ LakeHouse_ESP32_Controller Lambda
+- ❌ ESP32 references from codebase
+
 ### Documentation
+- **[README.md](README.md)** - Project overview and architecture
 - **[QUICK_START.md](QUICK_START.md)** - Get started immediately
 - **[AMPLIFY_SETUP.md](AMPLIFY_SETUP.md)** - Complete deployment guide
-- **Integration Examples** - Code snippets for connecting to your existing AWS resources
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment steps (secrets sanitized)
 
-## 🚀 Current Status
+## 🚀 Current Status (Live Production)
 
-**The dashboard is running right now at http://localhost:5173!**
+**The dashboard is live at:** https://d2j2fgs50q0x7r.amplifyapp.com
 
-- ✅ Frontend UI is complete and testable
-- ✅ All components are responsive (laptop + mobile)
-- ✅ Mock data displays properly
-- ✅ Backend code is written and ready to deploy
-- ⚠️ Backend deployment blocked by Node.js v25 compatibility issue
+- ✅ Frontend UI complete and responsive
+- ✅ Eero network monitoring working (28 devices tracked)
+- ✅ Logmor LTE switch control working
+- ✅ Admin token renewal GUI functional (tested January 23, 2026)
+- ✅ Token verified in SSM (last updated: 2026-01-23T14:19:26)
+- ✅ Periodic monitoring Lambda deployed
+- ✅ EventBridge schedule active (every 5 minutes)
+- ✅ Event logging to DynamoDB operational
+- ✅ All documentation updated with new architecture
 
 ## 📋 Next Steps
 

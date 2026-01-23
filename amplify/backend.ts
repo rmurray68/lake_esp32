@@ -1,12 +1,15 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { getDeviceStatus } from './functions/getDeviceStatus/resource';
 import { getLogs } from './functions/getLogs/resource';
 import { triggerReboot } from './functions/triggerReboot/resource';
 import { getEeroHealth } from './functions/getEeroHealth/resource';
 import { manageEeroToken } from './functions/manageEeroToken/resource';
+import { monitorDevices } from './functions/monitorDevices/resource';
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -14,23 +17,12 @@ import { manageEeroToken } from './functions/manageEeroToken/resource';
 const backend = defineBackend({
   auth,
   data,
-  getDeviceStatus,
   getLogs,
   triggerReboot,
   getEeroHealth,
   manageEeroToken,
+  monitorDevices,
 });
-
-// Grant DynamoDB read permissions to getDeviceStatus
-backend.getDeviceStatus.resources.lambda.addToRolePolicy(
-  new PolicyStatement({
-    actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:Scan'],
-    resources: [
-      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs',
-      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs/index/*',
-    ],
-  })
-);
 
 // Grant DynamoDB read permissions to getLogs
 backend.getLogs.resources.lambda.addToRolePolicy(
@@ -46,13 +38,6 @@ backend.getLogs.resources.lambda.addToRolePolicy(
 // Note: triggerReboot uses Lambda Function URL (with API key) instead of direct invocation
 
 // Add API routes for the Lambda functions
-backend.getDeviceStatus.resources.lambda.grantInvoke(
-  backend.auth.resources.unauthenticatedUserIamRole
-);
-backend.getDeviceStatus.resources.lambda.grantInvoke(
-  backend.auth.resources.authenticatedUserIamRole
-);
-
 backend.getLogs.resources.lambda.grantInvoke(
   backend.auth.resources.unauthenticatedUserIamRole
 );
@@ -96,7 +81,6 @@ backend.auth.resources.authenticatedUserIamRole.addToPrincipalPolicy(
     actions: ['lambda:InvokeFunction'],
     resources: [
       'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
-      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_ESP32_Controller',
     ],
   })
 );
@@ -106,15 +90,60 @@ backend.auth.resources.unauthenticatedUserIamRole.addToPrincipalPolicy(
     actions: ['lambda:InvokeFunction'],
     resources: [
       'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
-      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_ESP32_Controller',
     ],
   })
+);
+
+// Grant permissions for monitorDevices Lambda
+backend.monitorDevices.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['lambda:InvokeFunction'],
+    resources: [
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Eero_Test',
+      'arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Logmor_Controller',
+    ],
+  })
+);
+
+// Create DynamoDB table for device state storage
+const deviceStateTable = new Table(
+  backend.monitorDevices.resources.lambda.stack,
+  'LakeHouseDeviceState',
+  {
+    tableName: 'LakeHouse_DeviceState',
+    partitionKey: { name: 'deviceId', type: AttributeType.STRING },
+    billingMode: BillingMode.PAY_PER_REQUEST,
+  }
+);
+
+backend.monitorDevices.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['dynamodb:PutItem', 'dynamodb:Query'],
+    resources: [
+      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs',
+      'arn:aws:dynamodb:us-east-1:326185794606:table/LakeHouse_Logs/index/*',
+      deviceStateTable.tableArn,
+    ],
+  })
+);
+
+// Create EventBridge rule to run monitoring every 5 minutes
+const monitoringRule = new Rule(
+  backend.monitorDevices.resources.lambda.stack,
+  'MonitoringSchedule',
+  {
+    schedule: Schedule.rate({ minutes: 5 }),
+    description: 'Trigger device monitoring every 5 minutes',
+  }
+);
+
+monitoringRule.addTarget(
+  new LambdaFunction(backend.monitorDevices.resources.lambda)
 );
 
 // Add function names to outputs for frontend
 backend.addOutput({
   custom: {
-    getDeviceStatusFunctionName: backend.getDeviceStatus.resources.lambda.functionName,
     getLogsFunctionName: backend.getLogs.resources.lambda.functionName,
     triggerRebootFunctionName: backend.triggerReboot.resources.lambda.functionName,
     getEeroHealthFunctionName: backend.getEeroHealth.resources.lambda.functionName,

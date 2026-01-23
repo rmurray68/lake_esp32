@@ -1,43 +1,90 @@
-# Lake ESP32 Dashboard 🏠
+# Lake House Network Dashboard 🏠
 
-A modern, responsive web dashboard for monitoring and controlling your remote lake house internet connectivity system.
+A modern, responsive web dashboard for monitoring and controlling your remote lake house network and devices via Eero WiFi and Logmor LTE switch.
 
 ## 🌟 Features
 
-- **Real-time Monitoring**: View device status, uptime, temperature, and WiFi/cell signal strength
-- **Remote Power Control**: 
+- **Eero Network Monitoring**: 
+  - View all connected and disconnected devices
+  - Real-time device count and status
+  - Device details (name, location, IP, signal strength)
+  - Clickable device lists with full details dialog
+  - Network health tracking
+
+- **Logmor LTE Switch Control**: 
   - **Reboot (30s)** - Power cycle with automatic restore
   - **Power ON** - Turn relay on immediately
   - **Power OFF** - Full power down with manual restore
-- **Smart UI**: Buttons automatically enable/disable based on relay state
-- **Visual Feedback**: 
-  - Green "Relay: ON" / Red "Relay: OFF" status chips
+  - Cell signal strength monitoring
+  - Real-time relay status (ON/OFF)
+
+- **Admin Token Management**:
+  - GUI-based Eero token renewal (Settings icon)
+  - 3-step wizard: Phone → SMS Code → Verify
+  - Automatic session storage in AWS SSM
+
+- **Network Issues & Alerts**: 
+  - Device disconnect/reconnect notifications
+  - Low signal strength warnings
+  - Power state change tracking
+  - Automatic monitoring every 5 minutes
+
+- **Smart UI Features**:
+  - Buttons automatically enable/disable based on relay state
+  - Visual feedback with color-coded status chips
   - Live countdown timer during power cycling
-  - Manual refresh button for instant status updates
-- **Activity Logs**: See recent health checks and system events
-- **Responsive Design**: Works perfectly on both desktop and mobile devices
-- **Secure Authentication**: AWS Cognito with IAM-based Lambda invocation
-- **Serverless Architecture**: Scales automatically, pay only for what you use
+  - Manual refresh for instant status updates
+  - Responsive design for desktop and mobile
+
+- **Secure & Scalable**:
+  - AWS Cognito authentication
+  - IAM-based Lambda invocation
+  - Serverless architecture
+  - Auto-scaling infrastructure
 
 ## 📱 Dashboard Interface
 
 The dashboard displays:
-- **Device Status Cards**:
-  - Device online/offline status with color-coded chips
+- **Eero Network Status Card**:
+  - Network name (RM-WiFi)
+  - Online/offline device counts with color chips
+  - Top 5 connected devices with clickable "see more"
+  - Recently disconnected devices with last seen timestamps
+  - Full device list dialogs for both connected and disconnected
+
+- **Logmor LTE Switch Card**:
+  - Device online/offline status
   - Relay power status (ON/OFF) with green/red indicators
-  - Last seen timestamp with human-readable format
-  - System uptime tracking
-  - Temperature and signal strength readings
-  - Manual refresh button for instant updates
+  - Cell signal strength percentage
+  - Last seen timestamp
+  - Temperature and uptime readings
+  - Power control buttons (Reboot/ON/OFF)
 
-- **Power Control** (Logmor):
-  - Reboot (30s) - Orange button, shows countdown timer
-  - Power ON - Green button, disabled when already ON
-  - Power OFF - Red button with confirmation, disabled when already OFF
+- **Network Issues & Alerts**:
+  - Recent errors and warnings only
+  - Device disconnection events
+  - Low signal alerts
+  - Power state changes
+  - Empty state when all systems healthy
 
-- **Recent Activity Log**:
-  - Last 10 health check events from ESP32
-  - Timestamps and status indicators
+## 🏗️ Architecture
+
+### New Design (January 2026)
+- **Frontend**: React 18 + TypeScript + Vite + Material-UI
+- **Backend**: AWS Amplify Gen 2 (serverless)
+- **Monitoring**: EventBridge scheduled Lambda (every 5 minutes)
+- **Database**: DynamoDB (LakeHouse_Logs, 90-day TTL)
+- **External Integrations**:
+  - Eero API via LakeHouse_Eero_Test Lambda
+  - Logmor control via LakeHouse_Logmor_Controller Lambda
+- **Authentication**: AWS Cognito User Pool
+- **Session Storage**: AWS Systems Manager Parameter Store
+
+### Removed (Legacy ESP32 Design)
+- ~~ESP32-based URL monitoring device~~
+- ~~AWS IoT Core gateway~~
+- ~~SNS topics for notifications~~
+- ~~ESP32 controller Lambda~~
 
 ## 🚀 Quick Start
 
@@ -92,22 +139,24 @@ See [QUICK_START.md](QUICK_START.md) for detailed instructions.
 ┌─────────────────────▼───────────────────────────────────────┐
 │               AWS Amplify Gen 2                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Cognito    │  │   Lambda     │  │   Lambda     │      │
-│  │     Auth     │  │ getDevice    │  │ triggerReboot│      │
+│  │   Cognito    │  │   Lambda     │  │ EventBridge  │      │
+│  │     Auth     │  │  Functions   │  │   Schedule   │      │
 │  └──────────────┘  └──────┬───────┘  └──────┬───────┘      │
 └────────────────────────────┼──────────────────┼─────────────┘
                              │                  │
                     ┌────────▼────────┐ ┌──────▼──────────┐
-                    │   DynamoDB      │ │ Existing Lambda │
-                    │ LakeHouse_Logs  │ │   (Logmor)      │
-                    └─────────────────┘ └─────────────────┘
-                             ▲
-                             │
-                    ┌────────┴─────────┐
-                    │  ESP32-C3        │
-                    │  (IoT Device)    │
-                    └──────────────────┘
+                    │   DynamoDB      │ │ External Lambdas│
+                    │ LakeHouse_Logs  │ │ Eero & Logmor   │
+                    │ Device_State    │ └─────────────────┘
+                    └─────────────────┘
 ```
+
+**Key Components:**
+- **Frontend**: React dashboard with real-time device monitoring
+- **Amplify Gen 2**: Serverless backend with Lambda functions
+- **DynamoDB**: Event logs (90-day TTL) and device state storage
+- **EventBridge**: Scheduled monitoring every 5 minutes
+- **External Integrations**: Eero API and Logmor LTE switch
 
 ## 🛠️ Tech Stack
 
@@ -125,25 +174,30 @@ lake_esp32/
 │   ├── auth/                   # Cognito configuration
 │   ├── data/                   # GraphQL API (optional)
 │   ├── functions/              # Lambda functions
-│   │   ├── getDeviceStatus/    # Query DynamoDB
-│   │   └── triggerReboot/      # Invoke existing Lambda
+│   │   ├── getEeroHealth/      # Fetch Eero network status
+│   │   ├── manageEeroToken/    # Token renewal management
+│   │   ├── monitorDevices/     # Periodic monitoring (EventBridge)
+│   │   ├── getLogs/            # Query DynamoDB logs
+│   │   └── triggerReboot/      # Logmor power control
 │   └── backend.ts              # Main config
 │
 ├── web-dashboard/              # React frontend
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Dashboard.tsx
+│   │   │   ├── DashboardNew.tsx
+│   │   │   ├── EeroStatusCard.tsx
+│   │   │   ├── EeroTokenDialog.tsx
 │   │   │   ├── DeviceStatusCard.tsx
 │   │   │   └── RecentLogs.tsx
+│   │   ├── services/
+│   │   │   └── api.ts          # API client
 │   │   ├── App.tsx             # With authentication
-│   │   ├── App.demo.tsx        # Demo mode (testing)
 │   │   └── main.tsx
 │   └── package.json
 │
 ├── QUICK_START.md              # Quick start guide
 ├── AMPLIFY_SETUP.md            # Setup instructions
-├── INTEGRATION_GUIDE.md        # AWS integration
-├── DEPLOYMENT_CHECKLIST.md     # Deployment steps
+├── DEPLOYMENT.md               # Deployment guide
 ├── PROJECT_SUMMARY.md          # Project overview
 └── README.md                   # This file
 ```

@@ -47,46 +47,6 @@ export interface EeroTokenManagement {
   user_token?: string;
 }
 
-// Fetch ESP32 device status - calls Lambda directly
-export async function fetchEsp32Status(): Promise<DeviceStatus> {
-  const session = await fetchAuthSession();
-  const functionName = (outputs as any).custom?.getDeviceStatusFunctionName;
-  
-  if (!functionName) {
-    throw new Error('getDeviceStatus function not configured');
-  }
-
-  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
-  const lambda = new LambdaClient({
-    region: 'us-east-1',
-    credentials: session.credentials,
-  });
-
-  const result = await lambda.send(
-    new InvokeCommand({
-      FunctionName: functionName,
-      Payload: JSON.stringify({ deviceId: 'URL_Monitor_XIAO' }),
-    })
-  );
-
-  const responsePayload = result.Payload 
-    ? JSON.parse(new TextDecoder().decode(result.Payload))
-    : {};
-  
-  const data = JSON.parse(responsePayload.body || '{}');
-  
-  if (data.error) throw new Error(data.error);
-  
-  return {
-    deviceId: data.deviceId,
-    status: data.status,
-    lastSeen: data.lastSeen,
-    uptime: data.uptime,
-    temperature: data.temperature,
-    wifiSignal: data.wifiSignal,
-  };
-}
-
 // Fetch Logmor switch status
 export async function fetchLogmorStatus(): Promise<DeviceStatus> {
   try {
@@ -198,30 +158,6 @@ export async function powerOff(_deviceId: string): Promise<void> {
     : {};
   
   console.log('Power OFF response:', responsePayload);
-}
-
-// Trigger ESP32 reboot
-export async function triggerEsp32Reboot(): Promise<void> {
-  const session = await fetchAuthSession();
-  
-  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
-  const lambda = new LambdaClient({
-    region: 'us-east-1',
-    credentials: session.credentials,
-  });
-
-  const result = await lambda.send(
-    new InvokeCommand({
-      FunctionName: 'LakeHouse_ESP32_Controller',
-      Payload: JSON.stringify({ action: 'reboot' }),
-    })
-  );
-
-  const responsePayload = result.Payload 
-    ? JSON.parse(new TextDecoder().decode(result.Payload))
-    : {};
-  
-  console.log('ESP32 reboot response:', responsePayload);
 }
 
 // Fetch recent logs - calls Lambda directly
