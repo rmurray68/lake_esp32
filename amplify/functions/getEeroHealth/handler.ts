@@ -40,7 +40,9 @@ export const handler = async () => {
         })),
         disconnectedDevices: disconnectedDevices.map((d: any) => ({
           name: d.display_name || d.hostname,
-          lastActive: d.last_active
+          lastActive: d.last_active,
+          ip: d.ip || 'N/A',
+          location: d.source?.location || 'Unknown'
         }))
       })
     };

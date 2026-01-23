@@ -35,6 +35,8 @@ export interface EeroHealth {
   disconnectedDevices: Array<{
     name: string;
     lastActive: string;
+    ip: string;
+    location: string;
   }>;
 }
 

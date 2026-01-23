@@ -29,6 +29,7 @@ interface EeroStatusCardProps {
 
 export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroStatusCardProps) {
   const [devicesDialogOpen, setDevicesDialogOpen] = useState(false);
+  const [disconnectedDialogOpen, setDisconnectedDialogOpen] = useState(false);
   if (loading) {
     return (
       <Card sx={{ height: '100%' }}>
@@ -137,13 +138,23 @@ export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroS
         {eeroHealth.disconnectedCount > 0 && (
           <Box mt={2}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Recently Disconnected:
+              Recently Disconnected ({eeroHealth.disconnectedCount}):
             </Typography>
             {eeroHealth.disconnectedDevices.slice(0, 3).map((device, index) => (
               <Typography key={index} variant="caption" display="block" color="warning.main">
                 • {device.name} - Last seen: {new Date(device.lastActive).toLocaleString()}
               </Typography>
             ))}
+            {eeroHealth.disconnectedCount > 3 && (
+              <Link
+                component="button"
+                variant="caption"
+                onClick={() => setDisconnectedDialogOpen(true)}
+                sx={{ pt: 0.5, display: 'block', cursor: 'pointer', color: 'warning.main' }}
+              >
+                ...and {eeroHealth.disconnectedCount - 3} more
+              </Link>
+            )}
           </Box>
         )}
       </CardContent>
@@ -186,6 +197,45 @@ export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroS
                     {device.signal}
                   </Typography>
                 </Tooltip>
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={disconnectedDialogOpen}
+        onClose={() => setDisconnectedDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Disconnected Devices ({eeroHealth.disconnectedCount})
+          <DialogCloseButton
+            onClick={() => setDisconnectedDialogOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </DialogCloseButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ maxHeight: 500, overflowY: 'auto' }}>
+            {eeroHealth.disconnectedDevices.map((device, index) => (
+              <Box
+                key={index}
+                py={1}
+                borderBottom={index < eeroHealth.disconnectedDevices.length - 1 ? '1px solid' : 'none'}
+                borderColor="divider"
+              >
+                <Typography variant="body2" color="warning.main">
+                  {device.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Location: {device.location}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Last Active: {new Date(device.lastActive).toLocaleString()}
+                </Typography>
               </Box>
             ))}
           </Box>
