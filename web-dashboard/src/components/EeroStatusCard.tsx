@@ -19,6 +19,7 @@ import WifiIcon from '@mui/icons-material/Wifi';
 import DevicesIcon from '@mui/icons-material/Devices';
 import ErrorIcon from '@mui/icons-material/Error';
 import CloseIcon from '@mui/icons-material/Close';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import type { EeroHealth } from '../services/api';
 
 interface EeroStatusCardProps {
@@ -78,6 +79,12 @@ export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroS
         </Box>
 
         <Box display="flex" gap={1} mb={2} flexWrap="wrap">
+          <Chip
+            icon={<CheckCircleIcon />}
+            label={eeroHealth.internetUp ? 'Internet Connected' : 'Internet Down'}
+            color={eeroHealth.internetUp ? 'success' : 'error'}
+            size="small"
+          />
           <Chip
             icon={<DevicesIcon />}
             label={`${eeroHealth.deviceCount} Online`}

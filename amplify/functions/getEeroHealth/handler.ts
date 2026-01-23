@@ -25,6 +25,9 @@ export const handler = async () => {
     const connectedDevices = devicesBody.devices.filter((d: any) => d.connected);
     const disconnectedDevices = devicesBody.devices.filter((d: any) => !d.connected);
 
+    // Assume internet is up if we got a successful API response and have connected devices
+    const internetUp = connectedDevices.length > 0;
+
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -32,6 +35,7 @@ export const handler = async () => {
         deviceCount: connectedDevices.length,
         totalDevices: devicesBody.devices.length,
         disconnectedCount: disconnectedDevices.length,
+        internetUp,
         connectedDevices: connectedDevices.map((d: any) => ({
           name: d.display_name || d.hostname,
           ip: d.ip,

@@ -26,6 +26,7 @@ export interface EeroHealth {
   deviceCount: number;
   totalDevices: number;
   disconnectedCount: number;
+  internetUp: boolean;
   connectedDevices: Array<{
     name: string;
     ip: string;
