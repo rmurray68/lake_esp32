@@ -36,7 +36,11 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
   const fetchLogs = async () => {
     try {
       const data = await api.fetchRecentLogs();
-      setLogs(data);
+      // Filter to show only errors and warnings
+      const filteredLogs = data.filter(log => 
+        log.status === 'error' || log.status === 'warning'
+      );
+      setLogs(filteredLogs);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching logs:', error);
@@ -72,12 +76,21 @@ function RecentLogs({ deviceId }: RecentLogsProps) {
     <Card sx={{ width: '100%' }}>
       <CardContent>
         <Typography variant="h5" component="div" gutterBottom>
-          URL Monitor Activity Logs
+          Network Issues & Alerts
+        </Typography>
+        <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+          Showing errors and warnings only
         </Typography>
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
             <CircularProgress />
+          </Box>
+        ) : logs.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="body2" color="text.secondary">
+              No issues detected - network is running smoothly! 🎉
+            </Typography>
           </Box>
         ) : (
           <TableContainer sx={{ mt: 2 }}>

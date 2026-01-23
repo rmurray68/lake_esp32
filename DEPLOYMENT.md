@@ -29,12 +29,12 @@ After deployment, set the Lambda API key secret:
 2. Navigate to "Secrets management"
 3. Add secret:
    - Name: `LAMBDA_API_KEY`
-   - Value: `lakehouse2026`
+   - Value: `<YOUR_SECURE_API_KEY>`
 
 **Or via CLI:**
 ```bash
 npx ampx sandbox secret set LAMBDA_API_KEY
-# Enter: lakehouse2026
+# Enter your secure API key
 ```
 
 ### 4. Create Cognito User
@@ -44,24 +44,22 @@ After the backend deploys, create the admin user:
 # Get the User Pool ID from amplify_outputs.json or Amplify Console
 aws cognito-idp admin-create-user \
   --user-pool-id <YOUR_USER_POOL_ID> \
-  --username rpm228@gmail.com \
-  --user-attributes Name=email,Value=rpm228@gmail.com Name=email_verified,Value=true \
-  --temporary-password TempPassword123! \
+  --username <YOUR_EMAIL> \
+  --user-attributes Name=email,Value=<YOUR_EMAIL> Name=email_verified,Value=true \
+  --temporary-password <TEMP_PASSWORD> \
   --message-action SUPPRESS
 
 # Set permanent password
 aws cognito-idp admin-set-user-password \
   --user-pool-id <YOUR_USER_POOL_ID> \
-  --username rpm228@gmail.com \
-  --password 'Rocky25$$' \
+  --username <YOUR_EMAIL> \
+  --password '<YOUR_PASSWORD>' \
   --permanent
 ```
 
 ### 5. Access the Dashboard
 1. Navigate to your Amplify app URL (e.g., `https://main.xxxxxx.amplifyapp.com`)
-2. Login with:
-   - Email: `rpm228@gmail.com`
-   - Password: `Rocky25$$`
+2. Login with the credentials you set in step 4
 
 ## Architecture
 - **Frontend**: React + TypeScript + Vite + Material-UI

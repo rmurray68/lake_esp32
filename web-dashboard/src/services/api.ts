@@ -18,6 +18,33 @@ export interface LogEntry {
   message: string;
 }
 
+export interface EeroHealth {
+  network: {
+    name: string;
+    created: string;
+  };
+  deviceCount: number;
+  totalDevices: number;
+  disconnectedCount: number;
+  connectedDevices: Array<{
+    name: string;
+    ip: string;
+    signal: string;
+    location: string;
+  }>;
+  disconnectedDevices: Array<{
+    name: string;
+    lastActive: string;
+  }>;
+}
+
+export interface EeroTokenManagement {
+  action: 'test' | 'login' | 'verify';
+  phone?: string;
+  code?: string;
+  user_token?: string;
+}
+
 // Fetch ESP32 device status - calls Lambda directly
 export async function fetchEsp32Status(): Promise<DeviceStatus> {
   const session = await fetchAuthSession();
@@ -222,6 +249,69 @@ export async function fetchRecentLogs(): Promise<LogEntry[]> {
     : {};
   
   const data = JSON.parse(responsePayload.body || '[]');
+  
+  return data;
+}
+
+// Fetch Eero health status
+export async function fetchEeroHealth(): Promise<EeroHealth> {
+  const session = await fetchAuthSession();
+  const functionName = (outputs as any).custom?.getEeroHealthFunctionName;
+  
+  if (!functionName) {
+    throw new Error('getEeroHealth function not configured');
+  }
+
+  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+  const lambda = new LambdaClient({
+    region: 'us-east-1',
+    credentials: session.credentials,
+  });
+
+  const result = await lambda.send(
+    new InvokeCommand({
+      FunctionName: functionName,
+    })
+  );
+
+  const responsePayload = result.Payload 
+    ? JSON.parse(new TextDecoder().decode(result.Payload))
+    : {};
+  
+  const data = JSON.parse(responsePayload.body || '{}');
+  
+  if (data.error) throw new Error(data.error);
+  
+  return data;
+}
+
+// Manage Eero token (login, verify, test)
+export async function manageEeroToken(params: EeroTokenManagement): Promise<any> {
+  const session = await fetchAuthSession();
+  const functionName = (outputs as any).custom?.manageEeroTokenFunctionName;
+  
+  if (!functionName) {
+    throw new Error('manageEeroToken function not configured');
+  }
+
+  const { LambdaClient, InvokeCommand } = await import('@aws-sdk/client-lambda');
+  const lambda = new LambdaClient({
+    region: 'us-east-1',
+    credentials: session.credentials,
+  });
+
+  const result = await lambda.send(
+    new InvokeCommand({
+      FunctionName: functionName,
+      Payload: JSON.stringify({ body: JSON.stringify(params) }),
+    })
+  );
+
+  const responsePayload = result.Payload 
+    ? JSON.parse(new TextDecoder().decode(result.Payload))
+    : {};
+  
+  const data = JSON.parse(responsePayload.body || '{}');
   
   return data;
 }

@@ -6,12 +6,16 @@ import {
   Button,
   Box,
   CircularProgress,
+  IconButton,
 } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
 import type { AuthUser } from 'aws-amplify/auth';
 import DeviceStatusCard from './DeviceStatusCard.tsx';
+import EeroStatusCard from './EeroStatusCard.tsx';
+import EeroTokenDialog from './EeroTokenDialog.tsx';
 import RecentLogs from './RecentLogs.tsx';
 import * as api from '../services/api';
-import type { DeviceStatus } from '../services/api';
+import type { DeviceStatus, EeroHealth } from '../services/api';
 
 interface DashboardProps {
   user: AuthUser | undefined;
@@ -19,18 +23,22 @@ interface DashboardProps {
 }
 
 function DashboardNew({ user, signOut }: DashboardProps) {
-  const [esp32Status, setEsp32Status] = useState<DeviceStatus | null>(null);
+  const [eeroHealth, setEeroHealth] = useState<EeroHealth | null>(null);
   const [logmorStatus, setLogmorStatus] = useState<DeviceStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [eeroLoading, setEeroLoading] = useState(true);
   const [cycling, setCycling] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [esp32Rebooting, setEsp32Rebooting] = useState(false);
-  const [esp32Countdown, setEsp32Countdown] = useState(0);
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
   useEffect(() => {
     loadDeviceStatuses();
+    loadEeroHealth();
     
-    const interval = setInterval(loadDeviceStatuses, 30000);
+    const interval = setInterval(() => {
+      loadDeviceStatuses();
+      loadEeroHealth();
+    }, 30000);
     
     return () => clearInterval(interval);
   }, []);
@@ -45,29 +53,25 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     }
   }, [countdown, cycling]);
 
-  useEffect(() => {
-    if (esp32Countdown > 0) {
-      const timer = setTimeout(() => setEsp32Countdown(esp32Countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (esp32Rebooting && esp32Countdown === 0) {
-      setEsp32Rebooting(false);
-      loadDeviceStatuses();
-    }
-  }, [esp32Countdown, esp32Rebooting]);
-
   const loadDeviceStatuses = async () => {
     try {
-      const [esp32, logmor] = await Promise.all([
-        api.fetchEsp32Status(),
-        api.fetchLogmorStatus(),
-      ]);
-      
-      setEsp32Status(esp32);
+      const logmor = await api.fetchLogmorStatus();
       setLogmorStatus(logmor);
       setLoading(false);
     } catch (error) {
       console.error('Error loading device statuses:', error);
       setLoading(false);
+    }
+  };
+
+  const loadEeroHealth = async () => {
+    try {
+      const health = await api.fetchEeroHealth();
+      setEeroHealth(health);
+      setEeroLoading(false);
+    } catch (error) {
+      console.error('Error loading Eero health:', error);
+      setEeroLoading(false);
     }
   };
 
@@ -122,20 +126,6 @@ function DashboardNew({ user, signOut }: DashboardProps) {
     }
   };
 
-  const handleEsp32Reboot = async () => {
-    const confirmed = window.confirm('Are you sure you want to reboot the ESP32 device?');
-    if (!confirmed) return;
-    
-    try {
-      await api.triggerEsp32Reboot();
-      setEsp32Rebooting(true);
-      setEsp32Countdown(30);
-    } catch (error) {
-      console.error('Error rebooting ESP32:', error);
-      alert('Failed to send reboot command');
-    }
-  };
-
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static">
@@ -143,6 +133,9 @@ function DashboardNew({ user, signOut }: DashboardProps) {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Lake House Internet Dashboard
           </Typography>
+          <IconButton color="inherit" onClick={() => setTokenDialogOpen(true)}>
+            <SettingsIcon />
+          </IconButton>
           <Typography variant="body2" sx={{ mr: 2 }}>
             {user?.signInDetails?.loginId}
           </Typography>
@@ -171,16 +164,11 @@ function DashboardNew({ user, signOut }: DashboardProps) {
                 mb: 3,
               }}
             >
-              {esp32Status && (
-                <DeviceStatusCard
-                  device={esp32Status}
-                  title="URL Monitor (ESP32)"
-                  onReboot={handleEsp32Reboot}
-                  onRefresh={loadDeviceStatuses}
-                  cycling={esp32Rebooting}
-                  countdown={esp32Countdown}
-                />
-              )}
+              <EeroStatusCard
+                eeroHealth={eeroHealth}
+                loading={eeroLoading}
+                onRefresh={loadEeroHealth}
+              />
               {logmorStatus && (
                 <DeviceStatusCard
                   device={logmorStatus}
@@ -196,10 +184,15 @@ function DashboardNew({ user, signOut }: DashboardProps) {
             </Box>
 
             {/* Recent Logs */}
-            <RecentLogs deviceId={esp32Status?.deviceId || ''} />
+            <RecentLogs deviceId="network" />
           </>
         )}
       </Box>
+
+      <EeroTokenDialog
+        open={tokenDialogOpen}
+        onClose={() => setTokenDialogOpen(false)}
+      />
     </Box>
   );
 }

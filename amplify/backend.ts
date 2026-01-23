@@ -5,6 +5,8 @@ import { data } from './data/resource';
 import { getDeviceStatus } from './functions/getDeviceStatus/resource';
 import { getLogs } from './functions/getLogs/resource';
 import { triggerReboot } from './functions/triggerReboot/resource';
+import { getEeroHealth } from './functions/getEeroHealth/resource';
+import { manageEeroToken } from './functions/manageEeroToken/resource';
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -15,6 +17,8 @@ const backend = defineBackend({
   getDeviceStatus,
   getLogs,
   triggerReboot,
+  getEeroHealth,
+  manageEeroToken,
 });
 
 // Grant DynamoDB read permissions to getDeviceStatus
@@ -60,6 +64,32 @@ backend.triggerReboot.resources.lambda.grantInvoke(
   backend.auth.resources.authenticatedUserIamRole
 );
 
+backend.getEeroHealth.resources.lambda.grantInvoke(
+  backend.auth.resources.authenticatedUserIamRole
+);
+backend.getEeroHealth.resources.lambda.grantInvoke(
+  backend.auth.resources.unauthenticatedUserIamRole
+);
+
+backend.manageEeroToken.resources.lambda.grantInvoke(
+  backend.auth.resources.authenticatedUserIamRole
+);
+
+// Grant Eero Lambda functions permission to invoke LakeHouse_Eero_Test
+backend.getEeroHealth.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['lambda:InvokeFunction'],
+    resources: ['arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Eero_Test'],
+  })
+);
+
+backend.manageEeroToken.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['lambda:InvokeFunction'],
+    resources: ['arn:aws:lambda:us-east-1:326185794606:function:LakeHouse_Eero_Test'],
+  })
+);
+
 // Grant permission to invoke external LakeHouse_Logmor_Controller Lambda
 backend.auth.resources.authenticatedUserIamRole.addToPrincipalPolicy(
   new PolicyStatement({
@@ -87,5 +117,7 @@ backend.addOutput({
     getDeviceStatusFunctionName: backend.getDeviceStatus.resources.lambda.functionName,
     getLogsFunctionName: backend.getLogs.resources.lambda.functionName,
     triggerRebootFunctionName: backend.triggerReboot.resources.lambda.functionName,
+    getEeroHealthFunctionName: backend.getEeroHealth.resources.lambda.functionName,
+    manageEeroTokenFunctionName: backend.manageEeroToken.resources.lambda.functionName,
   },
 });
