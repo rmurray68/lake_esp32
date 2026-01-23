@@ -169,10 +169,10 @@ function DeviceStatusCard({ device, title, onReboot, onPowerOn, onPowerOff, onRe
                     <WifiTwoTone fontSize="small" color="action" />
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        WiFi Signal
+                        {title?.includes('Logmor') ? 'Cell Signal' : 'WiFi Signal'}
                       </Typography>
                       <Typography variant="body2">
-                        {device.wifiSignal} dBm
+                        {title?.includes('Logmor') ? `${device.wifiSignal}%` : `${device.wifiSignal} dBm`}
                       </Typography>
                     </Box>
                   </Box>

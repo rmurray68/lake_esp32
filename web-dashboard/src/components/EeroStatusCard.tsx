@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,11 +8,17 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton as DialogCloseButton,
+  Link,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WifiIcon from '@mui/icons-material/Wifi';
 import DevicesIcon from '@mui/icons-material/Devices';
 import ErrorIcon from '@mui/icons-material/Error';
+import CloseIcon from '@mui/icons-material/Close';
 import type { EeroHealth } from '../services/api';
 
 interface EeroStatusCardProps {
@@ -21,6 +28,7 @@ interface EeroStatusCardProps {
 }
 
 export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroStatusCardProps) {
+  const [devicesDialogOpen, setDevicesDialogOpen] = useState(false);
   if (loading) {
     return (
       <Card sx={{ height: '100%' }}>
@@ -114,9 +122,14 @@ export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroS
               </Box>
             ))}
             {eeroHealth.deviceCount > 5 && (
-              <Typography variant="caption" color="text.secondary" sx={{ pt: 1, display: 'block' }}>
+              <Link
+                component="button"
+                variant="caption"
+                onClick={() => setDevicesDialogOpen(true)}
+                sx={{ pt: 1, display: 'block', cursor: 'pointer' }}
+              >
                 ...and {eeroHealth.deviceCount - 5} more
-              </Typography>
+              </Link>
             )}
           </Box>
         </Box>
@@ -134,6 +147,50 @@ export default function EeroStatusCard({ eeroHealth, loading, onRefresh }: EeroS
           </Box>
         )}
       </CardContent>
+
+      <Dialog
+        open={devicesDialogOpen}
+        onClose={() => setDevicesDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          All Connected Devices ({eeroHealth.deviceCount})
+          <DialogCloseButton
+            onClick={() => setDevicesDialogOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </DialogCloseButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ maxHeight: 500, overflowY: 'auto' }}>
+            {eeroHealth.connectedDevices.map((device, index) => (
+              <Box
+                key={index}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                py={1}
+                borderBottom={index < eeroHealth.connectedDevices.length - 1 ? '1px solid' : 'none'}
+                borderColor="divider"
+              >
+                <Box>
+                  <Typography variant="body2">{device.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {device.location} • {device.ip}
+                  </Typography>
+                </Box>
+                <Tooltip title={device.signal}>
+                  <Typography variant="caption" color="text.secondary">
+                    {device.signal}
+                  </Typography>
+                </Tooltip>
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
