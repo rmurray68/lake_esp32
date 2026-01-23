@@ -3,6 +3,7 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import { Duration } from 'aws-cdk-lib';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { getLogs } from './functions/getLogs/resource';
@@ -132,7 +133,7 @@ const monitoringRule = new Rule(
   backend.monitorDevices.resources.lambda.stack,
   'MonitoringSchedule',
   {
-    schedule: Schedule.rate({ minutes: 5 }),
+    schedule: Schedule.rate(Duration.minutes(5)),
     description: 'Trigger device monitoring every 5 minutes',
   }
 );
